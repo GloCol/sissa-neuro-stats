@@ -1,0 +1,16 @@
+---
+title: "Practical Statistics in R for Neuroscience"
+subtitle: "SISSA PhD Course"
+---
+
+Welcome to the practical laboratory component of the Statistics course.
+
+### Course Schedule Lecture1
+- **Step 1**: Exploratory Data Analysis, Outlier Detection, Covariance & PCA
+- **Step 2**: Continuous Distributions, the CLT, and Confidence Intervals
+- **Step 3**: Hypothesis Testing, Power Analysis, and $t$-Tests
+- **Step 4**: Correlation, Linear Regression & Multiple Comparisons
+- **Step 5**: Mixed Effects Models & "Bring Your Own Data" Capstone
+
+### Setup Instructions
+Download the repository files to your computer, open `sissa-neuro-stats.Rproj`, and begin with Day 1 under the **Days** menu above.

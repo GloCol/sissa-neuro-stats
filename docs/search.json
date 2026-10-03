@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "practicals/Step1_pca.html",
+    "href": "practicals/Step1_pca.html",
+    "title": "Day 1: Exploring Dimensionality & PCA",
+    "section": "",
+    "text": "Adjust the slider below to project the 2D neural firing rates onto different vectors. Observe how the projected variance changes as the projection angle rotates:\n#| '!! shinylive warning !!': |\n#|   shinylive does not work in self-contained HTML documents.\n#|   Please set `embed-resources: false` in your metadata.\n#| standalone: true\n#| viewerHeight: 450\n\nlibrary(shiny)\n\nui &lt;- fluidPage(\n  sliderInput(\"angle\", \"Projection Angle (degrees):\", min = 0, max = 180, value = 45),\n  plotOutput(\"projPlot\")\n)\n\nserver &lt;- function(input, output) {\n  set.seed(42)\n  x &lt;- rnorm(60)\n  y &lt;- 0.8 * x + rnorm(60, sd = 0.5)\n  data_mat &lt;- cbind(x, y)\n  \n  output$projPlot &lt;- renderPlot({\n    theta &lt;- input$angle * pi / 180\n    v &lt;- c(cos(theta), sin(theta))\n    proj &lt;- data_mat %*% v\n    \n    par(mfrow = c(1, 2))\n    plot(x, y, pch = 19, col = \"steelblue\", asp = 1,\n         main = \"Scatter Plot & Projection Vector\", xlab = \"Neuron 1\", ylab = \"Neuron 2\")\n    arrows(0, 0, 2 * v[1], 2 * v[2], col = \"red\", lwd = 2)\n    \n    hist(proj, breaks = 12, col = \"salmon\", \n         main = paste(\"Projected Variance:\", round(var(proj), 2)),\n         xlab = \"Projected Coordinates\", xlim = c(-3, 3))\n  })\n}\n\nshinyApp(ui, server)"
+  },
+  {
+    "objectID": "practicals/Step1_pca.html#phase-1-intuition-playground",
+    "href": "practicals/Step1_pca.html#phase-1-intuition-playground",
+    "title": "Day 1: Exploring Dimensionality & PCA",
+    "section": "",
+    "text": "Adjust the slider below to project the 2D neural firing rates onto different vectors. Observe how the projected variance changes as the projection angle rotates:\n#| '!! shinylive warning !!': |\n#|   shinylive does not work in self-contained HTML documents.\n#|   Please set `embed-resources: false` in your metadata.\n#| standalone: true\n#| viewerHeight: 450\n\nlibrary(shiny)\n\nui &lt;- fluidPage(\n  sliderInput(\"angle\", \"Projection Angle (degrees):\", min = 0, max = 180, value = 45),\n  plotOutput(\"projPlot\")\n)\n\nserver &lt;- function(input, output) {\n  set.seed(42)\n  x &lt;- rnorm(60)\n  y &lt;- 0.8 * x + rnorm(60, sd = 0.5)\n  data_mat &lt;- cbind(x, y)\n  \n  output$projPlot &lt;- renderPlot({\n    theta &lt;- input$angle * pi / 180\n    v &lt;- c(cos(theta), sin(theta))\n    proj &lt;- data_mat %*% v\n    \n    par(mfrow = c(1, 2))\n    plot(x, y, pch = 19, col = \"steelblue\", asp = 1,\n         main = \"Scatter Plot & Projection Vector\", xlab = \"Neuron 1\", ylab = \"Neuron 2\")\n    arrows(0, 0, 2 * v[1], 2 * v[2], col = \"red\", lwd = 2)\n    \n    hist(proj, breaks = 12, col = \"salmon\", \n         main = paste(\"Projected Variance:\", round(var(proj), 2)),\n         xlab = \"Projected Coordinates\", xlim = c(-3, 3))\n  })\n}\n\nshinyApp(ui, server)"
+  },
+  {
+    "objectID": "practicals/Step1_pca.html#phase-2-fix-it-lab",
+    "href": "practicals/Step1_pca.html#phase-2-fix-it-lab",
+    "title": "Day 1: Exploring Dimensionality & PCA",
+    "section": "Phase 2: Fix-It Lab",
+    "text": "Phase 2: Fix-It Lab\n\nChallenge 1: The Dominant Channel Bug\nIn multi-channel recordings, channels with massive baseline voltages can dominate the principal components if data are not normalized.\nRun the code below and inspect the variance explained by PC1:\n# Simulate 5 channels where channel 1 has 100x the raw amplitude\nraw_channels &lt;- cbind(\n  ch1 = rnorm(50, mean = 500, sd = 50),\n  ch2 = rnorm(50, mean = 5, sd = 1),\n  ch3 = rnorm(50, mean = 5, sd = 1),\n  ch4 = rnorm(50, mean = 5, sd = 1),\n  ch5 = rnorm(50, mean = 5, sd = 1)\n)\n\n# BUG: scale. is currently set to FALSE\npca_bad &lt;- prcomp(raw_channels, scale. = FALSE)\nsummary(pca_bad)\n\n# TASK: Change scale. to TRUE and compare the proportion of variance explained!"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Practical Statistics in R for Neuroscience",
+    "section": "",
+    "text": "Welcome to the practical laboratory component of the Statistics course.\n\nCourse Schedule Lecture1\n\nStep 1: Exploratory Data Analysis, Outlier Detection, Covariance & PCA\nStep 2: Continuous Distributions, the CLT, and Confidence Intervals\nStep 3: Hypothesis Testing, Power Analysis, and \\(t\\)-Tests\nStep 4: Correlation, Linear Regression & Multiple Comparisons\nStep 5: Mixed Effects Models & “Bring Your Own Data” Capstone\n\n\n\nSetup Instructions\nDownload the repository files to your computer, open sissa-neuro-stats.Rproj, and begin with Day 1 under the Days menu above."
+  }
+]

@@ -1,0 +1,69 @@
+---
+title: "Day 1: Exploring Dimensionality & PCA"
+filters:
+  - shinylive
+---
+
+## Phase 1: Intuition Playground
+
+Adjust the slider below to project the 2D neural firing rates onto different vectors. Observe how the projected variance changes as the projection angle rotates:
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 450
+
+library(shiny)
+
+ui <- fluidPage(
+  sliderInput("angle", "Projection Angle (degrees):", min = 0, max = 180, value = 45),
+  plotOutput("projPlot")
+)
+
+server <- function(input, output) {
+  set.seed(42)
+  x <- rnorm(60)
+  y <- 0.8 * x + rnorm(60, sd = 0.5)
+  data_mat <- cbind(x, y)
+  
+  output$projPlot <- renderPlot({
+    theta <- input$angle * pi / 180
+    v <- c(cos(theta), sin(theta))
+    proj <- data_mat %*% v
+    
+    par(mfrow = c(1, 2))
+    plot(x, y, pch = 19, col = "steelblue", asp = 1,
+         main = "Scatter Plot & Projection Vector", xlab = "Neuron 1", ylab = "Neuron 2")
+    arrows(0, 0, 2 * v[1], 2 * v[2], col = "red", lwd = 2)
+    
+    hist(proj, breaks = 12, col = "salmon", 
+         main = paste("Projected Variance:", round(var(proj), 2)),
+         xlab = "Projected Coordinates", xlim = c(-3, 3))
+  })
+}
+
+shinyApp(ui, server)
+```
+
+## Phase 2: Fix-It Lab
+
+### Challenge 1: The Dominant Channel Bug
+In multi-channel recordings, channels with massive baseline voltages can dominate the principal components if data are not normalized.
+
+Run the code below and inspect the variance explained by PC1:
+
+```r
+# Simulate 5 channels where channel 1 has 100x the raw amplitude
+raw_channels <- cbind(
+  ch1 = rnorm(50, mean = 500, sd = 50),
+  ch2 = rnorm(50, mean = 5, sd = 1),
+  ch3 = rnorm(50, mean = 5, sd = 1),
+  ch4 = rnorm(50, mean = 5, sd = 1),
+  ch5 = rnorm(50, mean = 5, sd = 1)
+)
+
+# BUG: scale. is currently set to FALSE
+pca_bad <- prcomp(raw_channels, scale. = FALSE)
+summary(pca_bad)
+
+# TASK: Change scale. to TRUE and compare the proportion of variance explained!
+```

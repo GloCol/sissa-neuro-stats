@@ -1,0 +1,18 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "SISSA Practical Statistics in R"
+  navbar:
+    left:
+      - href: index.qmd
+        text: "Home"
+      - text: "Lectures"
+        menu:
+          - practicals/lecture1_pca.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
