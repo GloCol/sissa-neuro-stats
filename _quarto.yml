@@ -10,7 +10,7 @@ website:
         text: "Home"
       - text: "Lectures"
         menu:
-          - practicals/lecture1_pca.qmd
+          - practicals/Step1_pca.qmd
 
 format:
   html:

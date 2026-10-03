@@ -169,7 +169,10 @@ window.Quarto = {
  <span class="menu-text">Lectures</span>
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-lectures">    
-        <li class="dropdown-header">practicals/lecture1_pca.qmd</li>
+        <li>
+    <a class="dropdown-item" href="../practicals/Step1_pca.html">
+ <span class="dropdown-text">Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
@@ -296,9 +299,12 @@ shinyApp(ui, server)</code></pre>
 <h3 class="anchored" data-anchor-id="exercise-1-loading-data-and-summary-statistics">Exercise 1: Loading Data and Summary Statistics</h3>
 <p>Load the dataset and inspect the measures of central tendency and dispersion introduced in lecture: mean, median, variance, and quantiles[cite: 51, 53, 58, 70].</p>
 <div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the data</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calcium <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture1_calcium.csv"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(calcium)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  trial_id condition  roi_1  roi_2 roi_3 roi_4 roi_5 roi_6  roi_7  roi_8
 1        1  Stimulus 10.145  7.278 4.444 4.227 4.471 3.791 0.0415 501.74
@@ -308,15 +314,21 @@ shinyApp(ui, server)</code></pre>
 5        5  Stimulus  8.985 28.400 5.389 3.581 3.819 3.507 0.0485 507.74
 6        6  Stimulus  8.373  7.452 4.553 1.996 7.250 3.684 0.0476 453.45</code></pre>
 </div>
+<details open="" class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Compare mean and median on a noisy ROI (roi_2)</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mean_roi2 <span class="ot">&lt;-</span> <span class="fu">mean</span>(calcium<span class="sc">$</span>roi_2)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>median_roi2 <span class="ot">&lt;-</span> <span class="fu">median</span>(calcium<span class="sc">$</span>roi_2)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean ROI 2:   "</span>, <span class="fu">round</span>(mean_roi2, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Mean ROI 2:    4.9 </code></pre>
 </div>
+<details open="" class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median ROI 2: "</span>, <span class="fu">round</span>(median_roi2, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Median ROI 2:  4.232 </code></pre>
 </div>
@@ -347,6 +359,8 @@ shinyApp(ui, server)</code></pre>
 <p>For a column-centered matrix <span class="math inline">\(X_c\)</span> (<span class="math inline">\(n \times p\)</span>), the covariance matrix is given by[cite: 74]: <span class="math display">\[C = \frac{1}{n-1} X_c^T X_c\]</span></p>
 <p>Verify this matrix identity in R:</p>
 <div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Subset neurons roi_1 through roi_6</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>rois <span class="ot">&lt;-</span> calcium[, <span class="fu">paste0</span>(<span class="st">"roi_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>)]</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(rois)</span>
@@ -362,6 +376,7 @@ shinyApp(ui, server)</code></pre>
 <span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Confirm maximum discrepancy is negligible</span></span>
 <span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(cov_manual <span class="sc">-</span> cov_r))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 7.105427e-15</code></pre>
 </div>
@@ -376,6 +391,8 @@ In our dataset: * <code>roi_7</code> has very low amplitude values (<span class=
 <h4 class="anchored" data-anchor-id="the-broken-code">The Broken Code:</h4>
 <p>Observe what happens when PCA is run without unit-variance scaling (<code>scale. = FALSE</code>):</p>
 <div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Include all 8 recording channels</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>rois_all <span class="ot">&lt;-</span> calcium[, <span class="fu">paste0</span>(<span class="st">"roi_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>)]</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -384,6 +401,7 @@ In our dataset: * <code>roi_7</code> has very low amplitude values (<span class=
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Check variance explained</span></span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_unscaled)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Importance of components:
                            PC1     PC2     PC3     PC4     PC5     PC6     PC7
@@ -399,7 +417,10 @@ Cumulative Proportion  1.000000</code></pre>
 <p><strong>PC1 accounts for &gt;99.8% of the total variance.</strong></p>
 <p>Inspect the loadings (eigenvector weights) for PC1:</p>
 <div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pca_unscaled<span class="sc">$</span>rotation[, <span class="dv">1</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>        roi_1         roi_2         roi_3         roi_4         roi_5 
 -2.749068e-03 -1.934686e-02  2.290681e-03  1.787522e-04  7.540696e-04 
