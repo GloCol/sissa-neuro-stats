@@ -1,69 +1,226 @@
 ---
-title: "Day 1: Exploring Dimensionality & PCA"
+title: "Lecture 1: Exploratory Data Analysis, Covariance & PCA"
+subtitle: "SISSA PhD in Neuroscience - Practical Lab"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
 filters:
   - shinylive
 ---
 
-## Phase 1: Intuition Playground
+## Step 1: Intuition Playground (30 min)
 
-Adjust the slider below to project the 2D neural firing rates onto different vectors. Observe how the projected variance changes as the projection angle rotates:
+### The Geometry of Dimensionality Reduction
+In the theoretical lecture, we discussed how covariance measures shared variance between variables and how PCA finds orthogonal axes that maximize projected variance[cite: 73, 75].
+
+Interact with the sandbox below:
+1. Adjust the **Projection Vector Angle** $\theta$.
+2. Observe the right panel: how does the variance of the projected data points change?
+3. Locate the angle that maximizes the projected variance (this corresponds to the first eigenvector, or **PC1**)[cite: 75].
 
 ```{shinylive-r}
 #| standalone: true
-#| viewerHeight: 450
+#| viewerHeight: 520
 
 library(shiny)
 
 ui <- fluidPage(
-  sliderInput("angle", "Projection Angle (degrees):", min = 0, max = 180, value = 45),
-  plotOutput("projPlot")
+  titlePanel("Maximizing Projected Variance"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("theta", "Projection Vector Angle (°):", min = 0, max = 180, value = 20, step = 2),
+      helpText("The red line shows the chosen unit vector. The histogram displays the distribution of data points projected onto this line.")
+    ),
+    mainPanel(
+      plotOutput("pcaPlot", height = "400px")
+    )
+  )
 )
 
 server <- function(input, output) {
-  set.seed(42)
-  x <- rnorm(60)
-  y <- 0.8 * x + rnorm(60, sd = 0.5)
-  data_mat <- cbind(x, y)
-  
-  output$projPlot <- renderPlot({
-    theta <- input$angle * pi / 180
-    v <- c(cos(theta), sin(theta))
-    proj <- data_mat %*% v
-    
-    par(mfrow = c(1, 2))
-    plot(x, y, pch = 19, col = "steelblue", asp = 1,
-         main = "Scatter Plot & Projection Vector", xlab = "Neuron 1", ylab = "Neuron 2")
-    arrows(0, 0, 2 * v[1], 2 * v[2], col = "red", lwd = 2)
-    
-    hist(proj, breaks = 12, col = "salmon", 
-         main = paste("Projected Variance:", round(var(proj), 2)),
-         xlab = "Projected Coordinates", xlim = c(-3, 3))
+  set.seed(123)
+  x_raw <- rnorm(70, mean = 0, sd = 1.8)
+  y_raw <- 0.7 * x_raw + rnorm(70, mean = 0, sd = 0.7)
+  X <- cbind(x_raw - mean(x_raw), y_raw - mean(y_raw))
+
+  output$pcaPlot <- renderPlot({
+    rad <- input$theta * pi / 180
+    u <- c(cos(rad), sin(rad))
+    projections <- as.vector(X %*% u)
+    var_proj <- var(projections)
+
+    par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
+
+    # Scatter plot with projection line
+    plot(X[, 1], X[, 2], pch = 19, col = rgb(0.1, 0.4, 0.8, 0.7),
+         xlim = c(-5, 5), ylim = c(-5, 5), asp = 1,
+         xlab = "Neuron 1 (centered)", ylab = "Neuron 2 (centered)",
+         main = "Original Data Space")
+    abline(0, tan(rad), col = "firebrick", lwd = 2.5)
+    arrows(0, 0, 3 * cos(rad), 3 * sin(rad), col = "firebrick", lwd = 3, length = 0.1)
+    grid()
+
+    # Histogram of projections
+    hist(projections, breaks = seq(-6, 6, by = 0.8), col = "darkorange", border = "white",
+         xlim = c(-6, 6), ylim = c(0, 35),
+         xlab = "Projected Coordinates",
+         main = paste("Projected Variance:", round(var_proj, 3)))
+    abline(v = mean(projections), col = "black", lty = 2, lwd = 2)
   })
 }
 
 shinyApp(ui, server)
 ```
 
-## Phase 2: Fix-It Lab
+---
 
-### Challenge 1: The Dominant Channel Bug
-In multi-channel recordings, channels with massive baseline voltages can dominate the principal components if data are not normalized.
+## Step 2: "Code-Along & Fix-It" Lab (80 min)
 
-Run the code below and inspect the variance explained by PC1:
+We will analyze multi-neuron 2-photon calcium imaging recordings: `data/lecture1_calcium.csv`.
+
+### Exercise 1: Loading Data and Summary Statistics
+
+Load the dataset and inspect the measures of central tendency and dispersion introduced in lecture: mean, median, variance, and quantiles[cite: 51, 53, 58, 70].
+
+```{r}
+# 1. Load the data
+calcium <- read.csv("../data/lecture1_calcium.csv")
+head(calcium)
+
+# 2. Compare mean and median on a noisy ROI (roi_2)
+mean_roi2 <- mean(calcium$roi_2)
+median_roi2 <- median(calcium$roi_2)
+
+cat("Mean ROI 2:   ", round(mean_roi2, 3), "\n")
+cat("Median ROI 2: ", round(median_roi2, 3), "\n")
+```
+
+#### Trap 1: Outliers and Systematic vs. Unsystematic Error
+Notice the discrepancy between mean and median in `roi_2`[cite: 51, 53]. Isolated artifacts (such as preparation movement) distort the sample mean while leaving the median stable[cite: 51, 53, 64].
+
+Identify outliers using the boxplot whisker rule from lecture[cite: 64]:
+$$W_l = Q_1 - 1.5 \cdot \text{IQR}, \quad W_u = Q_3 + 1.5 \cdot \text{IQR}$$
 
 ```r
-# Simulate 5 channels where channel 1 has 100x the raw amplitude
-raw_channels <- cbind(
-  ch1 = rnorm(50, mean = 500, sd = 50),
-  ch2 = rnorm(50, mean = 5, sd = 1),
-  ch3 = rnorm(50, mean = 5, sd = 1),
-  ch4 = rnorm(50, mean = 5, sd = 1),
-  ch5 = rnorm(50, mean = 5, sd = 1)
-)
+# --- TASK: COMPLETE THE CODE ---
+# Calculate Q1, Q3, and IQR for calcium$roi_2
+q1 <- quantile(calcium$roi_2, 0.25)
+q3 <- quantile(calcium$roi_2, 0.75)
+iqr_val <- q3 - q1
 
-# BUG: scale. is currently set to FALSE
-pca_bad <- prcomp(raw_channels, scale. = FALSE)
-summary(pca_bad)
+# Define upper threshold
+upper_limit <- q3 + 1.5 * iqr_val
 
-# TASK: Change scale. to TRUE and compare the proportion of variance explained!
+# Extract trials that exceed this threshold:
+# FIX ME: complete indexing
+outliers <- calcium[calcium$roi_2 > upper_limit, c("trial_id", "condition", "roi_2")]
+print(outliers)
 ```
+
+---
+
+### Exercise 2: Manual Covariance Matrix Construction
+
+The sample covariance between variables $X$ and $Y$ is defined as[cite: 73]:
+$$s_{x,y} = \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})$$
+
+For a column-centered matrix $X_c$ ($n \times p$), the covariance matrix is given by[cite: 74]:
+$$C = \frac{1}{n-1} X_c^T X_c$$
+
+Verify this matrix identity in R:
+
+```{r}
+# Subset neurons roi_1 through roi_6
+rois <- calcium[, paste0("roi_", 1:6)]
+n <- nrow(rois)
+
+# Center columns by subtracting each sample mean
+X_c <- scale(rois, center = TRUE, scale = FALSE)
+
+# Compute covariance via matrix multiplication (%*%)
+cov_manual <- (1 / (n - 1)) * (t(X_c) %*% X_c)
+
+# Compare with base R cov()
+cov_r <- cov(rois)
+
+# Confirm maximum discrepancy is negligible
+max(abs(cov_manual - cov_r))
+```
+
+---
+
+### Exercise 3: The Scaling Trap in PCA
+
+Run Principal Component Analysis using `prcomp()`.  
+In our dataset:
+* `roi_7` has very low amplitude values ($\mu \approx 0.05$).
+* `roi_8` has a large amplifier baseline offset ($\mu \approx 450, \sigma \approx 65$).
+
+#### The Broken Code:
+Observe what happens when PCA is run without unit-variance scaling (`scale. = FALSE`):
+
+```{r}
+# Include all 8 recording channels
+rois_all <- calcium[, paste0("roi_", 1:8)]
+
+# BUG: scaling disabled
+pca_unscaled <- prcomp(rois_all, scale. = FALSE)
+
+# Check variance explained
+summary(pca_unscaled)
+```
+
+**PC1 accounts for >99.8% of the total variance.**
+
+Inspect the loadings (eigenvector weights) for PC1:
+```{r}
+pca_unscaled$rotation[, 1]
+```
+
+`roi_8` dominates the entire analysis due strictly to its unit scale, masking the biological dynamics of the remaining neurons[cite: 75].
+
+#### The Fix:
+Correct the command by setting `scale. = TRUE`:
+
+```r
+# --- TASK: COMPLETE THE CODE ---
+# Re-run PCA with each channel standardized to unit variance:
+pca_scaled <- prcomp(rois_all, scale. = TRUE) # FIX HERE
+
+summary(pca_scaled)
+```
+
+---
+
+### Exercise 4: Visualizing Behavioral Trials in Latent Space
+
+Plot the trials in the reduced coordinate system (**PC1 vs. PC2**) to evaluate whether population activity separates `Stimulus` and `Spontaneous` conditions without prior labels[cite: 75].
+
+```r
+# Extract coordinates (scores) along PC1 and PC2
+scores_df <- as.data.frame(pca_scaled$x)
+scores_df$condition <- calcium$condition
+
+# Scatter plot of low-dimensional projections
+plot(scores_df$PC1, scores_df$PC2,
+     col = ifelse(scores_df$condition == "Stimulus", "firebrick", "steelblue"),
+     pch = 19, cex = 1.3,
+     xlab = "PC1", ylab = "PC2",
+     main = "Trial Projections in PCA Space")
+legend("topright", legend = c("Stimulus", "Spontaneous"),
+       col = c("firebrick", "steelblue"), pch = 19)
+grid()
+```
+
+---
+
+## Step 3: Peer Code Review & Diagnostic Discussion (25 min)
+
+Form pairs and compare outputs:
+
+1. **Biological Interpretation of Loadings:**  
+   Run `pca_scaled$rotation[, 1:2]`. Which neurons contribute most to PC1? Do the neurons separating *Stimulus* from *Spontaneous* correspond to the sensory-responsive units?
+2. **Variance vs. Causality:**  
+   Review the caveat from lecture: PCA maximizes variance, not correlation with experimental conditions[cite: 75]. If an artifact (e.g., optical drift or animal motion) introduces large variance, PCA will isolate the artifact as PC1[cite: 75].

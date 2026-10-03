@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Day 1: Exploring Dimensionality &amp; PCA – SISSA Practical Statistics in R</title>
+<title>Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA – SISSA Practical Statistics in R</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -111,6 +111,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -159,11 +188,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#phase-1-intuition-playground" id="toc-phase-1-intuition-playground" class="nav-link active" data-scroll-target="#phase-1-intuition-playground">Phase 1: Intuition Playground</a></li>
-  <li><a href="#phase-2-fix-it-lab" id="toc-phase-2-fix-it-lab" class="nav-link" data-scroll-target="#phase-2-fix-it-lab">Phase 2: Fix-It Lab</a>
+  <li><a href="#step-1-intuition-playground-30-min" id="toc-step-1-intuition-playground-30-min" class="nav-link active" data-scroll-target="#step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</a>
   <ul class="collapse">
-  <li><a href="#challenge-1-the-dominant-channel-bug" id="toc-challenge-1-the-dominant-channel-bug" class="nav-link" data-scroll-target="#challenge-1-the-dominant-channel-bug">Challenge 1: The Dominant Channel Bug</a></li>
+  <li><a href="#the-geometry-of-dimensionality-reduction" id="toc-the-geometry-of-dimensionality-reduction" class="nav-link" data-scroll-target="#the-geometry-of-dimensionality-reduction">The Geometry of Dimensionality Reduction</a></li>
   </ul></li>
+  <li><a href="#step-2-code-along-fix-it-lab-80-min" id="toc-step-2-code-along-fix-it-lab-80-min" class="nav-link" data-scroll-target="#step-2-code-along-fix-it-lab-80-min">Step 2: “Code-Along &amp; Fix-It” Lab (80 min)</a>
+  <ul class="collapse">
+  <li><a href="#exercise-1-loading-data-and-summary-statistics" id="toc-exercise-1-loading-data-and-summary-statistics" class="nav-link" data-scroll-target="#exercise-1-loading-data-and-summary-statistics">Exercise 1: Loading Data and Summary Statistics</a></li>
+  <li><a href="#exercise-2-manual-covariance-matrix-construction" id="toc-exercise-2-manual-covariance-matrix-construction" class="nav-link" data-scroll-target="#exercise-2-manual-covariance-matrix-construction">Exercise 2: Manual Covariance Matrix Construction</a></li>
+  <li><a href="#exercise-3-the-scaling-trap-in-pca" id="toc-exercise-3-the-scaling-trap-in-pca" class="nav-link" data-scroll-target="#exercise-3-the-scaling-trap-in-pca">Exercise 3: The Scaling Trap in PCA</a></li>
+  <li><a href="#exercise-4-visualizing-behavioral-trials-in-latent-space" id="toc-exercise-4-visualizing-behavioral-trials-in-latent-space" class="nav-link" data-scroll-target="#exercise-4-visualizing-behavioral-trials-in-latent-space">Exercise 4: Visualizing Behavioral Trials in Latent Space</a></li>
+  </ul></li>
+  <li><a href="#step-3-peer-code-review-diagnostic-discussion-25-min" id="toc-step-3-peer-code-review-diagnostic-discussion-25-min" class="nav-link" data-scroll-target="#step-3-peer-code-review-diagnostic-discussion-25-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (25 min)</a></li>
   </ul>
 </nav>
     </div>
@@ -172,7 +208,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Day 1: Exploring Dimensionality &amp; PCA</h1>
+<h1 class="title">Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA</h1>
+<p class="subtitle lead">SISSA PhD in Neuroscience - Practical Lab</p>
 </div>
 
 
@@ -189,69 +226,230 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="phase-1-intuition-playground" class="level2">
-<h2 class="anchored" data-anchor-id="phase-1-intuition-playground">Phase 1: Intuition Playground</h2>
-<p>Adjust the slider below to project the 2D neural firing rates onto different vectors. Observe how the projected variance changes as the projection angle rotates:</p>
+<section id="step-1-intuition-playground-30-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</h2>
+<section id="the-geometry-of-dimensionality-reduction" class="level3">
+<h3 class="anchored" data-anchor-id="the-geometry-of-dimensionality-reduction">The Geometry of Dimensionality Reduction</h3>
+<p>In the theoretical lecture, we discussed how covariance measures shared variance between variables and how PCA finds orthogonal axes that maximize projected variance[cite: 73, 75].</p>
+<p>Interact with the sandbox below: 1. Adjust the <strong>Projection Vector Angle</strong> <span class="math inline">\(\theta\)</span>. 2. Observe the right panel: how does the variance of the projected data points change? 3. Locate the angle that maximizes the projected variance (this corresponds to the first eigenvector, or <strong>PC1</strong>)[cite: 75].</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
 #| standalone: true
-#| viewerHeight: 450
+#| viewerHeight: 520
 
 library(shiny)
 
 ui &lt;- fluidPage(
-  sliderInput("angle", "Projection Angle (degrees):", min = 0, max = 180, value = 45),
-  plotOutput("projPlot")
+  titlePanel("Maximizing Projected Variance"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("theta", "Projection Vector Angle (°):", min = 0, max = 180, value = 20, step = 2),
+      helpText("The red line shows the chosen unit vector. The histogram displays the distribution of data points projected onto this line.")
+    ),
+    mainPanel(
+      plotOutput("pcaPlot", height = "400px")
+    )
+  )
 )
 
 server &lt;- function(input, output) {
-  set.seed(42)
-  x &lt;- rnorm(60)
-  y &lt;- 0.8 * x + rnorm(60, sd = 0.5)
-  data_mat &lt;- cbind(x, y)
-  
-  output$projPlot &lt;- renderPlot({
-    theta &lt;- input$angle * pi / 180
-    v &lt;- c(cos(theta), sin(theta))
-    proj &lt;- data_mat %*% v
-    
-    par(mfrow = c(1, 2))
-    plot(x, y, pch = 19, col = "steelblue", asp = 1,
-         main = "Scatter Plot &amp; Projection Vector", xlab = "Neuron 1", ylab = "Neuron 2")
-    arrows(0, 0, 2 * v[1], 2 * v[2], col = "red", lwd = 2)
-    
-    hist(proj, breaks = 12, col = "salmon", 
-         main = paste("Projected Variance:", round(var(proj), 2)),
-         xlab = "Projected Coordinates", xlim = c(-3, 3))
+  set.seed(123)
+  x_raw &lt;- rnorm(70, mean = 0, sd = 1.8)
+  y_raw &lt;- 0.7 * x_raw + rnorm(70, mean = 0, sd = 0.7)
+  X &lt;- cbind(x_raw - mean(x_raw), y_raw - mean(y_raw))
+
+  output$pcaPlot &lt;- renderPlot({
+    rad &lt;- input$theta * pi / 180
+    u &lt;- c(cos(rad), sin(rad))
+    projections &lt;- as.vector(X %*% u)
+    var_proj &lt;- var(projections)
+
+    par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
+
+    # Scatter plot with projection line
+    plot(X[, 1], X[, 2], pch = 19, col = rgb(0.1, 0.4, 0.8, 0.7),
+         xlim = c(-5, 5), ylim = c(-5, 5), asp = 1,
+         xlab = "Neuron 1 (centered)", ylab = "Neuron 2 (centered)",
+         main = "Original Data Space")
+    abline(0, tan(rad), col = "firebrick", lwd = 2.5)
+    arrows(0, 0, 3 * cos(rad), 3 * sin(rad), col = "firebrick", lwd = 3, length = 0.1)
+    grid()
+
+    # Histogram of projections
+    hist(projections, breaks = seq(-6, 6, by = 0.8), col = "darkorange", border = "white",
+         xlim = c(-6, 6), ylim = c(0, 35),
+         xlab = "Projected Coordinates",
+         main = paste("Projected Variance:", round(var_proj, 3)))
+    abline(v = mean(projections), col = "black", lty = 2, lwd = 2)
   })
 }
 
 shinyApp(ui, server)</code></pre>
+<hr>
 </section>
-<section id="phase-2-fix-it-lab" class="level2">
-<h2 class="anchored" data-anchor-id="phase-2-fix-it-lab">Phase 2: Fix-It Lab</h2>
-<section id="challenge-1-the-dominant-channel-bug" class="level3">
-<h3 class="anchored" data-anchor-id="challenge-1-the-dominant-channel-bug">Challenge 1: The Dominant Channel Bug</h3>
-<p>In multi-channel recordings, channels with massive baseline voltages can dominate the principal components if data are not normalized.</p>
-<p>Run the code below and inspect the variance explained by PC1:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate 5 channels where channel 1 has 100x the raw amplitude</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>raw_channels <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ch1 =</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">500</span>, <span class="at">sd =</span> <span class="dv">50</span>),</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">ch2 =</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">5</span>, <span class="at">sd =</span> <span class="dv">1</span>),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ch3 =</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">5</span>, <span class="at">sd =</span> <span class="dv">1</span>),</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ch4 =</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">5</span>, <span class="at">sd =</span> <span class="dv">1</span>),</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ch5 =</span> <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="at">mean =</span> <span class="dv">5</span>, <span class="at">sd =</span> <span class="dv">1</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">BUG</span><span class="co">: scale. is currently set to FALSE</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>pca_bad <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(raw_channels, <span class="at">scale. =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_bad)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TASK</span><span class="co">: Change scale. to TRUE and compare the proportion of variance explained!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="step-2-code-along-fix-it-lab-80-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-code-along-fix-it-lab-80-min">Step 2: “Code-Along &amp; Fix-It” Lab (80 min)</h2>
+<p>We will analyze multi-neuron 2-photon calcium imaging recordings: <code>data/lecture1_calcium.csv</code>.</p>
+<section id="exercise-1-loading-data-and-summary-statistics" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-1-loading-data-and-summary-statistics">Exercise 1: Loading Data and Summary Statistics</h3>
+<p>Load the dataset and inspect the measures of central tendency and dispersion introduced in lecture: mean, median, variance, and quantiles[cite: 51, 53, 58, 70].</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calcium <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture1_calcium.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(calcium)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  trial_id condition  roi_1  roi_2 roi_3 roi_4 roi_5 roi_6  roi_7  roi_8
+1        1  Stimulus 10.145  7.278 4.444 4.227 4.471 3.791 0.0415 501.74
+2        2  Stimulus  7.822  6.033 3.076 3.124 6.198 5.320 0.0391 355.52
+3        3  Stimulus  8.936  7.225 5.499 4.553 6.458 3.878 0.0452 456.40
+4        4  Stimulus  9.259  8.204 4.459 4.442 6.449 5.270 0.0466 411.40
+5        5  Stimulus  8.985 28.400 5.389 3.581 3.819 3.507 0.0485 507.74
+6        6  Stimulus  8.373  7.452 4.553 1.996 7.250 3.684 0.0476 453.45</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Compare mean and median on a noisy ROI (roi_2)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mean_roi2 <span class="ot">&lt;-</span> <span class="fu">mean</span>(calcium<span class="sc">$</span>roi_2)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>median_roi2 <span class="ot">&lt;-</span> <span class="fu">median</span>(calcium<span class="sc">$</span>roi_2)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean ROI 2:   "</span>, <span class="fu">round</span>(mean_roi2, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mean ROI 2:    4.9 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median ROI 2: "</span>, <span class="fu">round</span>(median_roi2, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Median ROI 2:  4.232 </code></pre>
+</div>
+</div>
+<section id="trap-1-outliers-and-systematic-vs.-unsystematic-error" class="level4">
+<h4 class="anchored" data-anchor-id="trap-1-outliers-and-systematic-vs.-unsystematic-error">Trap 1: Outliers and Systematic vs.&nbsp;Unsystematic Error</h4>
+<p>Notice the discrepancy between mean and median in <code>roi_2</code>[cite: 51, 53]. Isolated artifacts (such as preparation movement) distort the sample mean while leaving the median stable[cite: 51, 53, 64].</p>
+<p>Identify outliers using the boxplot whisker rule from lecture[cite: 64]: <span class="math display">\[W_l = Q_1 - 1.5 \cdot \text{IQR}, \quad W_u = Q_3 + 1.5 \cdot \text{IQR}\]</span></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: COMPLETE THE CODE ---</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Q1, Q3, and IQR for calcium$roi_2</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>q1 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(calcium<span class="sc">$</span>roi_2, <span class="fl">0.25</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>q3 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(calcium<span class="sc">$</span>roi_2, <span class="fl">0.75</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>iqr_val <span class="ot">&lt;-</span> q3 <span class="sc">-</span> q1</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Define upper threshold</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>upper_limit <span class="ot">&lt;-</span> q3 <span class="sc">+</span> <span class="fl">1.5</span> <span class="sc">*</span> iqr_val</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract trials that exceed this threshold:</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># FIX ME: complete indexing</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>outliers <span class="ot">&lt;-</span> calcium[calcium<span class="sc">$</span>roi_2 <span class="sc">&gt;</span> upper_limit, <span class="fu">c</span>(<span class="st">"trial_id"</span>, <span class="st">"condition"</span>, <span class="st">"roi_2"</span>)]</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(outliers)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="exercise-2-manual-covariance-matrix-construction" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-2-manual-covariance-matrix-construction">Exercise 2: Manual Covariance Matrix Construction</h3>
+<p>The sample covariance between variables <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> is defined as[cite: 73]: <span class="math display">\[s_{x,y} = \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})\]</span></p>
+<p>For a column-centered matrix <span class="math inline">\(X_c\)</span> (<span class="math inline">\(n \times p\)</span>), the covariance matrix is given by[cite: 74]: <span class="math display">\[C = \frac{1}{n-1} X_c^T X_c\]</span></p>
+<p>Verify this matrix identity in R:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Subset neurons roi_1 through roi_6</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>rois <span class="ot">&lt;-</span> calcium[, <span class="fu">paste0</span>(<span class="st">"roi_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>)]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(rois)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Center columns by subtracting each sample mean</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>X_c <span class="ot">&lt;-</span> <span class="fu">scale</span>(rois, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute covariance via matrix multiplication (%*%)</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>cov_manual <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">/</span> (n <span class="sc">-</span> <span class="dv">1</span>)) <span class="sc">*</span> (<span class="fu">t</span>(X_c) <span class="sc">%*%</span> X_c)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with base R cov()</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>cov_r <span class="ot">&lt;-</span> <span class="fu">cov</span>(rois)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Confirm maximum discrepancy is negligible</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(cov_manual <span class="sc">-</span> cov_r))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7.105427e-15</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="exercise-3-the-scaling-trap-in-pca" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-3-the-scaling-trap-in-pca">Exercise 3: The Scaling Trap in PCA</h3>
+<p>Run Principal Component Analysis using <code>prcomp()</code>.<br>
+In our dataset: * <code>roi_7</code> has very low amplitude values (<span class="math inline">\(\mu \approx 0.05\)</span>). * <code>roi_8</code> has a large amplifier baseline offset (<span class="math inline">\(\mu \approx 450, \sigma \approx 65\)</span>).</p>
+<section id="the-broken-code" class="level4">
+<h4 class="anchored" data-anchor-id="the-broken-code">The Broken Code:</h4>
+<p>Observe what happens when PCA is run without unit-variance scaling (<code>scale. = FALSE</code>):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Include all 8 recording channels</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>rois_all <span class="ot">&lt;-</span> calcium[, <span class="fu">paste0</span>(<span class="st">"roi_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>)]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">BUG</span><span class="co">: scaling disabled</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>pca_unscaled <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(rois_all, <span class="at">scale. =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Check variance explained</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_unscaled)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                           PC1     PC2     PC3     PC4     PC5     PC6     PC7
+Standard deviation     68.4163 5.85467 3.24021 1.62862 1.39322 0.95499 0.74407
+Proportion of Variance  0.9893 0.00724 0.00222 0.00056 0.00041 0.00019 0.00012
+Cumulative Proportion   0.9893 0.99650 0.99872 0.99928 0.99969 0.99988 1.00000
+                            PC8
+Standard deviation     0.009039
+Proportion of Variance 0.000000
+Cumulative Proportion  1.000000</code></pre>
+</div>
+</div>
+<p><strong>PC1 accounts for &gt;99.8% of the total variance.</strong></p>
+<p>Inspect the loadings (eigenvector weights) for PC1:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pca_unscaled<span class="sc">$</span>rotation[, <span class="dv">1</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        roi_1         roi_2         roi_3         roi_4         roi_5 
+-2.749068e-03 -1.934686e-02  2.290681e-03  1.787522e-04  7.540696e-04 
+        roi_6         roi_7         roi_8 
+-1.861331e-03 -2.169932e-05 -9.998044e-01 </code></pre>
+</div>
+</div>
+<p><code>roi_8</code> dominates the entire analysis due strictly to its unit scale, masking the biological dynamics of the remaining neurons[cite: 75].</p>
+</section>
+<section id="the-fix" class="level4">
+<h4 class="anchored" data-anchor-id="the-fix">The Fix:</h4>
+<p>Correct the command by setting <code>scale. = TRUE</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: COMPLETE THE CODE ---</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-run PCA with each channel standardized to unit variance:</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>pca_scaled <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(rois_all, <span class="at">scale. =</span> <span class="cn">TRUE</span>) <span class="co"># FIX HERE</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_scaled)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="exercise-4-visualizing-behavioral-trials-in-latent-space" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-4-visualizing-behavioral-trials-in-latent-space">Exercise 4: Visualizing Behavioral Trials in Latent Space</h3>
+<p>Plot the trials in the reduced coordinate system (<strong>PC1 vs.&nbsp;PC2</strong>) to evaluate whether population activity separates <code>Stimulus</code> and <code>Spontaneous</code> conditions without prior labels[cite: 75].</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract coordinates (scores) along PC1 and PC2</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>scores_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(pca_scaled<span class="sc">$</span>x)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>scores_df<span class="sc">$</span>condition <span class="ot">&lt;-</span> calcium<span class="sc">$</span>condition</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot of low-dimensional projections</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(scores_df<span class="sc">$</span>PC1, scores_df<span class="sc">$</span>PC2,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">ifelse</span>(scores_df<span class="sc">$</span>condition <span class="sc">==</span> <span class="st">"Stimulus"</span>, <span class="st">"firebrick"</span>, <span class="st">"steelblue"</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">cex =</span> <span class="fl">1.3</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"PC1"</span>, <span class="at">ylab =</span> <span class="st">"PC2"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Trial Projections in PCA Space"</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topright"</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Stimulus"</span>, <span class="st">"Spontaneous"</span>),</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"firebrick"</span>, <span class="st">"steelblue"</span>), <span class="at">pch =</span> <span class="dv">19</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="fu">grid</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="step-3-peer-code-review-diagnostic-discussion-25-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-peer-code-review-diagnostic-discussion-25-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (25 min)</h2>
+<p>Form pairs and compare outputs:</p>
+<ol type="1">
+<li><strong>Biological Interpretation of Loadings:</strong><br>
+Run <code>pca_scaled$rotation[, 1:2]</code>. Which neurons contribute most to PC1? Do the neurons separating <em>Stimulus</em> from <em>Spontaneous</em> correspond to the sensory-responsive units?</li>
+<li><strong>Variance vs.&nbsp;Causality:</strong><br>
+Review the caveat from lecture: PCA maximizes variance, not correlation with experimental conditions[cite: 75]. If an artifact (e.g., optical drift or animal motion) introduces large variance, PCA will isolate the artifact as PC1[cite: 75].</li>
+</ol>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
