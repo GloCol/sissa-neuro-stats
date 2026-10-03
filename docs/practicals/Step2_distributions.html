@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Lecture 2: Continuous Distributions, CLT &amp; Confidence Intervals – SISSA Practical Statistics in R</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-a0f9fd0d421825b736dc1bbcbcba2219.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<meta name="shinylive:serviceworker_dir" content="..">
+<script src="../site_libs/quarto-contrib/shinylive-0.10.12/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="../site_libs/quarto-contrib/shinylive-0.10.12/shinylive/run-python-blocks.js" type="module"></script>
+<link href="../site_libs/quarto-contrib/shinylive-0.10.12/shinylive/shinylive.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">SISSA Practical Statistics in R</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-lectures" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Lectures</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-lectures">    
+        <li>
+    <a class="dropdown-item" href="../practicals/Step1_pca.html">
+ <span class="dropdown-text">Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#step-1-intuition-playground-30-min" id="toc-step-1-intuition-playground-30-min" class="nav-link active" data-scroll-target="#step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</a>
+  <ul class="collapse">
+  <li><a href="#the-dance-of-confidence-intervals-sandbox" id="toc-the-dance-of-confidence-intervals-sandbox" class="nav-link" data-scroll-target="#the-dance-of-confidence-intervals-sandbox">The “Dance of Confidence Intervals” Sandbox</a></li>
+  </ul></li>
+  <li><a href="#step-2-code-along-fix-it-lab-85-min" id="toc-step-2-code-along-fix-it-lab-85-min" class="nav-link" data-scroll-target="#step-2-code-along-fix-it-lab-85-min">Step 2: “Code-Along &amp; Fix-It” Lab (85 min)</a>
+  <ul class="collapse">
+  <li><a href="#exercise-1-empirical-cdf-vs.-theoretical-distributions" id="toc-exercise-1-empirical-cdf-vs.-theoretical-distributions" class="nav-link" data-scroll-target="#exercise-1-empirical-cdf-vs.-theoretical-distributions">Exercise 1: Empirical CDF vs.&nbsp;Theoretical Distributions</a></li>
+  <li><a href="#exercise-2-building-quantile-quantile-q-q-plots-manually" id="toc-exercise-2-building-quantile-quantile-q-q-plots-manually" class="nav-link" data-scroll-target="#exercise-2-building-quantile-quantile-q-q-plots-manually">Exercise 2: Building Quantile-Quantile (Q-Q) Plots Manually</a></li>
+  <li><a href="#exercise-3-simulating-the-central-limit-theorem-clt" id="toc-exercise-3-simulating-the-central-limit-theorem-clt" class="nav-link" data-scroll-target="#exercise-3-simulating-the-central-limit-theorem-clt">Exercise 3: Simulating the Central Limit Theorem (CLT)</a></li>
+  <li><a href="#exercise-4-standard-deviation-vs.-standard-error-vs.-confidence-interval" id="toc-exercise-4-standard-deviation-vs.-standard-error-vs.-confidence-interval" class="nav-link" data-scroll-target="#exercise-4-standard-deviation-vs.-standard-error-vs.-confidence-interval">Exercise 4: Standard Deviation vs.&nbsp;Standard Error vs.&nbsp;Confidence Interval</a></li>
+  </ul></li>
+  <li><a href="#step-3-peer-code-review-diagnostic-discussion-20-min" id="toc-step-3-peer-code-review-diagnostic-discussion-20-min" class="nav-link" data-scroll-target="#step-3-peer-code-review-diagnostic-discussion-20-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (20 min)</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lecture 2: Continuous Distributions, CLT &amp; Confidence Intervals</h1>
+<p class="subtitle lead">SISSA PhD in Neuroscience - Practical Lab</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="step-1-intuition-playground-30-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</h2>
+<section id="the-dance-of-confidence-intervals-sandbox" class="level3">
+<h3 class="anchored" data-anchor-id="the-dance-of-confidence-intervals-sandbox">The “Dance of Confidence Intervals” Sandbox</h3>
+<p>In the theoretical lecture, we saw that the sample mean <span class="math inline">\(\bar{X}\)</span> is itself a random variable with sampling variance <span class="math inline">\(\sigma^2 / n\)</span>. Its confidence interval is given by: <span class="math display">\[IC_{1-\alpha} = \left[\bar{x} - t_{n-1, 1-\frac{\alpha}{2}}\frac{s}{\sqrt{n}}, \; \bar{x} + t_{n-1, 1-\frac{\alpha}{2}}\frac{s}{\sqrt{n}}\right]\]</span></p>
+<p>A frequent mistake is thinking that a 95% confidence interval means <em>“there is a 95% probability that the true parameter <span class="math inline">\(\mu\)</span> lies within this specific interval.”</em></p>
+<p>Use the simulator below to simulate 50 repeated experiments from a population with true mean <span class="math inline">\(\mu = 30\)</span>: 1. Check how many calculated intervals actually intersect the true dashed line <span class="math inline">\(\mu = 30\)</span>. 2. Change the sample size <span class="math inline">\(n\)</span> from 5 to 50: observe what happens to interval widths. 3. Compare the coverage between the normal z-quantile and the Student’s t-quantile when sample size <span class="math inline">\(n\)</span> is very small (<span class="math inline">\(n = 4\)</span>).</p>
+<pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
+#|   shinylive does not work in self-contained HTML documents.
+#|   Please set `embed-resources: false` in your metadata.
+#| standalone: true
+#| viewerHeight: 560
+
+library(shiny)
+
+ui &lt;- fluidPage(
+  titlePanel("Sampling Distribution &amp; Confidence Intervals"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("n_samples", "Sample Size (n per experiment):", min = 3, max = 60, value = 8, step = 1),
+      sliderInput("conf_level", "Confidence Level (1 - α):", min = 0.80, max = 0.99, value = 0.95, step = 0.01),
+      radioButtons("dist_type", "Interval Method:",
+                   choices = c("Student's t-quantile (Exact)" = "t", "Gaussian z-quantile (CLT approx)" = "z")),
+      actionButton("resim", "Re-run 50 Experiments", class = "btn-primary")
+    ),
+    mainPanel(
+      plotOutput("ciPlot", height = "460px")
+    )
+  )
+)
+
+server &lt;- function(input, output) {
+  sim_data &lt;- reactive({
+    input$resim
+    mu &lt;- 30
+    sigma &lt;- 8
+    k &lt;- 50
+    n &lt;- input$n_samples
+    
+    means &lt;- numeric(k)
+    lower &lt;- numeric(k)
+    upper &lt;- numeric(k)
+    
+    alpha &lt;- 1 - input$conf_level
+    
+    for (i in 1:k) {
+      samp &lt;- rnorm(n, mean = mu, sd = sigma)
+      m &lt;- mean(samp)
+      s &lt;- sd(samp)
+      se &lt;- s / sqrt(n)
+      
+      crit &lt;- if (input$dist_type == "t") qt(1 - alpha/2, df = n - 1) else qnorm(1 - alpha/2)
+      
+      means[i] &lt;- m
+      lower[i] &lt;- m - crit * se
+      upper[i] &lt;- m + crit * se
+    }
+    
+    covers &lt;- (lower &lt;= mu) &amp; (upper &gt;= mu)
+    list(means = means, lower = lower, upper = upper, covers = covers, mu = mu)
+  })
+
+  output$ciPlot &lt;- renderPlot({
+    res &lt;- sim_data()
+    k &lt;- length(res$means)
+    coverage_rate &lt;- mean(res$covers) * 100
+    
+    par(mar = c(4.5, 4.5, 3, 1))
+    plot(0, 0, type = "n", xlim = c(15, 45), ylim = c(1, k),
+         xlab = "Estimated Mean (with Confidence Interval)", ylab = "Experiment Index (1 to 50)",
+         main = paste0("Empirical Coverage: ", coverage_rate, "% (Nominal: ", round((1 - (1 - input$conf_level))*100), "%)"))
+    
+    abline(v = res$mu, col = "black", lwd = 2, lty = 2)
+    
+    for (i in 1:k) {
+      col_line &lt;- if (res$covers[i]) "steelblue" else "firebrick"
+      lines(c(res$lower[i], res$upper[i]), c(i, i), col = col_line, lwd = 1.8)
+      points(res$means[i], i, pch = 20, col = col_line, cex = 0.9)
+    }
+    legend("topright", legend = c("Captures True μ", "Misses True μ", "True μ (Ground Truth)"),
+           col = c("steelblue", "firebrick", "black"), lty = c(1, 1, 2), lwd = 2, bty = "n")
+  })
+}
+
+shinyApp(ui, server)</code></pre>
+<hr>
+</section>
+</section>
+<section id="step-2-code-along-fix-it-lab-85-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-code-along-fix-it-lab-85-min">Step 2: “Code-Along &amp; Fix-It” Lab (85 min)</h2>
+<p>We use single-unit timing data: <code>data/lecture2_neural_timing.csv</code>.</p>
+<section id="exercise-1-empirical-cdf-vs.-theoretical-distributions" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-1-empirical-cdf-vs.-theoretical-distributions">Exercise 1: Empirical CDF vs.&nbsp;Theoretical Distributions</h3>
+<p>In continuous distributions, the probability of obtaining an exact value is zero (<span class="math inline">\(P(X = y) = 0\)</span>). We evaluate intervals using the Cumulative Distribution Function (CDF): <span class="math display">\[F_X(t) = P(X \le t) = \int_{-\infty}^t f_X(x)\,dx\]</span></p>
+<p>Let’s test whether baseline resting membrane potential (<code>v_rest_mv</code>) matches a Gaussian model <span class="math inline">\(\mathcal{N}(\mu, \sigma^2)\)</span>.</p>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the dataset</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>timing <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture2_neural_timing.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>v_rest <span class="ot">&lt;-</span> timing<span class="sc">$</span>v_rest_mv</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Compute empirical summary estimates</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>mu_hat <span class="ot">&lt;-</span> <span class="fu">mean</span>(v_rest)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>s_hat <span class="ot">&lt;-</span> <span class="fu">sd</span>(v_rest)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Compute Empirical Cumulative Distribution Function (ECDF)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>ecdf_vrest <span class="ot">&lt;-</span> <span class="fu">ecdf</span>(v_rest)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot empirical CDF against theoretical Gaussian CDF</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>grid_vals <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">min</span>(v_rest) <span class="sc">-</span> <span class="dv">2</span>, <span class="fu">max</span>(v_rest) <span class="sc">+</span> <span class="dv">2</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ecdf_vrest, <span class="at">verticals =</span> <span class="cn">TRUE</span>, <span class="at">do.points =</span> <span class="cn">FALSE</span>, <span class="at">col =</span> <span class="st">"steelblue"</span>, <span class="at">lwd =</span> <span class="dv">2</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Empirical vs. Theoretical Normal CDF"</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"Membrane Potential (mV)"</span>, <span class="at">ylab =</span> <span class="st">"P(V &lt;= t)"</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(grid_vals, <span class="fu">pnorm</span>(grid_vals, <span class="at">mean =</span> mu_hat, <span class="at">sd =</span> s_hat), <span class="at">col =</span> <span class="st">"firebrick"</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Empirical ECDF"</span>, <span class="st">"Theoretical Gaussian"</span>),</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"firebrick"</span>), <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">bty =</span> <span class="st">"n"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Step2_distributions_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="exercise-2-building-quantile-quantile-q-q-plots-manually" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-2-building-quantile-quantile-q-q-plots-manually">Exercise 2: Building Quantile-Quantile (Q-Q) Plots Manually</h3>
+<p>From the theoretical lecture, a Q-Q plot compares empirical sample quantiles <span class="math inline">\(Q(q)\)</span> against theoretical quantiles <span class="math inline">\(Q_P(q) = F_X^{-1}(q)\)</span> for probability steps <span class="math inline">\(q \in (0, 1)\)</span>.</p>
+<p>Below is an intentionally broken function that attempts to build a normal Q-Q plot for inter-spike intervals (<code>isi_ms</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- BROKEN CODE </span><span class="al">TASK</span><span class="co"> ---</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The function below has two bugs:</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Probabilities q are wrongly spaced or out of range.</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. It compares against theoretical quantiles of the wrong distribution without parameter estimates.</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>broken_qq_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data_vec) {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(data_vec)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  sorted_data <span class="ot">&lt;-</span> <span class="fu">sort</span>(data_vec)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span><span class="al">BUG</span><span class="co"> 1: Probabilities must be within (0, 1). Using 1:n includes 1.0 where qnorm() returns +Inf</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># FIX: Use the standard Hazen or Weibull grid: q = (1:n - 0.5) / n</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  q_grid <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>n) <span class="sc">/</span> n <span class="co"># &lt;-- FIX THIS LINE</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sample quantiles</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  sample_quantiles <span class="ot">&lt;-</span> sorted_data</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span><span class="al">BUG</span><span class="co"> 2: Theoretical quantiles need to be standardized using sample mean and sd</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  theoretical_quantiles <span class="ot">&lt;-</span> <span class="fu">qnorm</span>(q_grid, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">1</span>) <span class="co"># Standard normal</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(theoretical_quantiles, sample_quantiles,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">xlab =</span> <span class="st">"Theoretical Normal Quantiles"</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>       <span class="at">ylab =</span> <span class="st">"Empirical Quantiles"</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>       <span class="at">main =</span> <span class="st">"Normal Q-Q Plot"</span>, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">"purple"</span>)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abline</span>(<span class="fu">lm</span>(sample_quantiles <span class="sc">~</span> theoretical_quantiles), <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the function on ISI data</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="fu">broken_qq_plot</span>(timing<span class="sc">$</span>isi_ms)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Task:</strong> Fix line 11 so that <code>q_grid &lt;- (1:n - 0.5) / n</code>. Observe the severe right-tail curvature. Why does inter-spike interval data deviate systematically from the straight line?</p>
+<hr>
+</section>
+<section id="exercise-3-simulating-the-central-limit-theorem-clt" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-3-simulating-the-central-limit-theorem-clt">Exercise 3: Simulating the Central Limit Theorem (CLT)</h3>
+<p>The CLT states that the standardized mean of independent, identically distributed variables converges to <span class="math inline">\(\mathcal{N}(0, 1)\)</span> as <span class="math inline">\(n \to \infty\)</span>, regardless of the underlying distribution (as long as <span class="math inline">\(\sigma^2 &lt; \infty\)</span>).</p>
+<p>Let’s draw samples from the skewed <code>isi_ms</code> distribution with sample sizes <span class="math inline">\(n = 3, 10, 50\)</span>:</p>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>n_reps <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to generate sampling distribution of the mean</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>sample_means <span class="ot">&lt;-</span> <span class="cf">function</span>(pop, n, reps) {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">replicate</span>(reps, <span class="fu">mean</span>(<span class="fu">sample</span>(pop, <span class="at">size =</span> n, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>means_n3  <span class="ot">&lt;-</span> <span class="fu">sample_means</span>(timing<span class="sc">$</span>isi_ms, <span class="at">n =</span> <span class="dv">3</span>,  <span class="at">reps =</span> n_reps)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>means_n10 <span class="ot">&lt;-</span> <span class="fu">sample_means</span>(timing<span class="sc">$</span>isi_ms, <span class="at">n =</span> <span class="dv">10</span>, <span class="at">reps =</span> n_reps)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>means_n50 <span class="ot">&lt;-</span> <span class="fu">sample_means</span>(timing<span class="sc">$</span>isi_ms, <span class="at">n =</span> <span class="dv">50</span>, <span class="at">reps =</span> n_reps)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(means_n3,  <span class="at">breaks =</span> <span class="dv">30</span>, <span class="at">col =</span> <span class="st">"salmon"</span>, <span class="at">border =</span> <span class="st">"white"</span>, <span class="at">main =</span> <span class="st">"n = 3 (Skewed)"</span>, <span class="at">xlab =</span> <span class="st">"Mean ISI"</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(means_n10, <span class="at">breaks =</span> <span class="dv">30</span>, <span class="at">col =</span> <span class="st">"orange"</span>, <span class="at">border =</span> <span class="st">"white"</span>, <span class="at">main =</span> <span class="st">"n = 10"</span>, <span class="at">xlab =</span> <span class="st">"Mean ISI"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(means_n50, <span class="at">breaks =</span> <span class="dv">30</span>, <span class="at">col =</span> <span class="st">"forestgreen"</span>, <span class="at">border =</span> <span class="st">"white"</span>, <span class="at">main =</span> <span class="st">"n = 50 (Gaussian)"</span>, <span class="at">xlab =</span> <span class="st">"Mean ISI"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Step2_distributions_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="exercise-4-standard-deviation-vs.-standard-error-vs.-confidence-interval" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-4-standard-deviation-vs.-standard-error-vs.-confidence-interval">Exercise 4: Standard Deviation vs.&nbsp;Standard Error vs.&nbsp;Confidence Interval</h3>
+<p>Slide 40 illustrates the distinction between Range, SD, SE, and CI as sample size changes.</p>
+<p>Complete the calculation of error metrics for behavioral reaction times (<code>timing$rt_ms</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: COMPLETE THE METRICS ---</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>calc_error_metrics <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">alpha =</span> <span class="fl">0.05</span>) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(x)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">mean</span>(x)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  s <span class="ot">&lt;-</span> <span class="fu">sd</span>(x)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Standard Error of the Mean (SE)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  se <span class="ot">&lt;-</span> s <span class="sc">/</span> <span class="fu">sqrt</span>(n)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Student's t critical value</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  t_crit <span class="ot">&lt;-</span> <span class="fu">qt</span>(<span class="dv">1</span> <span class="sc">-</span> alpha<span class="sc">/</span><span class="dv">2</span>, <span class="at">df =</span> n <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 95% Confidence Interval bounds</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  ci_lower <span class="ot">&lt;-</span> m <span class="sc">-</span> t_crit <span class="sc">*</span> se</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  ci_upper <span class="ot">&lt;-</span> m <span class="sc">+</span> t_crit <span class="sc">*</span> se</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">data.frame</span>(</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean =</span> m,</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD =</span> s,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">SE =</span> se,</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">CI_Width =</span> ci_upper <span class="sc">-</span> ci_lower</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare a small pilot sample (n = 5) vs the full cohort (n = 120)</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>pilot_sample <span class="ot">&lt;-</span> <span class="fu">sample</span>(timing<span class="sc">$</span>rt_ms, <span class="at">size =</span> <span class="dv">5</span>)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>full_sample  <span class="ot">&lt;-</span> timing<span class="sc">$</span>rt_ms</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">Pilot_N5  =</span> <span class="fu">calc_error_metrics</span>(pilot_sample),</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">Cohort_N120 =</span> <span class="fu">calc_error_metrics</span>(full_sample)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Notice that as <span class="math inline">\(N\)</span> increases: * <span class="math inline">\(\text{SD}\)</span> stays approximately constant (it measures population spread). * <span class="math inline">\(\text{SE}\)</span> and the <span class="math inline">\(\text{CI}\)</span> shrink proportionally to <span class="math inline">\(1/\sqrt{n}\)</span> (they measure precision of the mean estimate).</p>
+<hr>
+</section>
+</section>
+<section id="step-3-peer-code-review-diagnostic-discussion-20-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-peer-code-review-diagnostic-discussion-20-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (20 min)</h2>
+<p>Form pairs and compare outputs:</p>
+<ol type="1">
+<li><strong>The Small-<span class="math inline">\(N\)</span> Student’s <span class="math inline">\(t\)</span> Penalty:</strong><br>
+Compare <span class="math inline">\(t_{n-1, 0.975}\)</span> when <span class="math inline">\(n = 4\)</span> (<span class="math inline">\(df = 3 \Rightarrow t \approx 3.18\)</span>) vs.&nbsp;<span class="math inline">\(z_{0.975} = 1.96\)</span>. What happens when researchers with small sample sizes use <span class="math inline">\(z\)</span> instead of <span class="math inline">\(t\)</span>?</li>
+<li><strong>Q-Q Plot Diagnosis:</strong><br>
+Inspect the Q-Q plot for <code>timing$evoked_lat_ms</code>. What shape appears if you take the natural log (<code>log(timing$evoked_lat_ms)</code>) before running <code>qqnorm()</code>?</li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

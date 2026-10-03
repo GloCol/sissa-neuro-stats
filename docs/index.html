@@ -71,35 +71,6 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 </head>
 
@@ -151,7 +122,7 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#course-schedule-lecture1" id="toc-course-schedule-lecture1" class="nav-link active" data-scroll-target="#course-schedule-lecture1">Course Schedule Lecture1</a></li>
+  <li><a href="#course-practicals" id="toc-course-practicals" class="nav-link active" data-scroll-target="#course-practicals">Course Practicals</a></li>
   <li><a href="#setup-instructions" id="toc-setup-instructions" class="nav-link" data-scroll-target="#setup-instructions">Setup Instructions</a></li>
   </ul>
 </nav>
@@ -180,19 +151,23 @@ window.Quarto = {
 
 
 <p>Welcome to the practical laboratory component of the Statistics course.</p>
-<section id="course-schedule-lecture1" class="level3">
-<h3 class="anchored" data-anchor-id="course-schedule-lecture1">Course Schedule Lecture1</h3>
+<section id="course-practicals" class="level3">
+<h3 class="anchored" data-anchor-id="course-practicals">Course Practicals</h3>
 <ul>
-<li><strong>Step 1</strong>: Exploratory Data Analysis, Outlier Detection, Covariance &amp; PCA</li>
-<li><strong>Step 2</strong>: Continuous Distributions, the CLT, and Confidence Intervals</li>
-<li><strong>Step 3</strong>: Hypothesis Testing, Power Analysis, and <span class="math inline">\(t\)</span>-Tests</li>
-<li><strong>Step 4</strong>: Correlation, Linear Regression &amp; Multiple Comparisons</li>
-<li><strong>Step 5</strong>: Mixed Effects Models &amp; “Bring Your Own Data” Capstone</li>
+<li>🔬 <strong><a href="./practicals/Step1_pca.html">Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA</a></strong></li>
+<li>📊 <strong>Lecture 2: Continuous Distributions, CLT &amp; Confidence Intervals</strong> <em>(Coming soon)</em></li>
+<li>🧪 <strong>Lecture 3: Hypothesis Testing, Power &amp; t-Tests</strong> <em>(Coming soon)</em></li>
+<li>📈 <strong>Lecture 4: Correlation, Linear Regression &amp; Multiplicity</strong> <em>(Coming soon)</em></li>
+<li>🧠 <strong>Lecture 5: Mixed Effects &amp; Bring-Your-Own-Data Capstone</strong> <em>(Coming soon)</em></li>
 </ul>
 </section>
 <section id="setup-instructions" class="level3">
 <h3 class="anchored" data-anchor-id="setup-instructions">Setup Instructions</h3>
-<p>Download the repository files to your computer, open <code>sissa-neuro-stats.Rproj</code>, and begin with Day 1 under the <strong>Days</strong> menu above.</p>
+<ol type="1">
+<li>Download the repository files to your computer.</li>
+<li>Open <code>sissa-neuro-stats.Rproj</code> in RStudio.</li>
+<li>Open <code>practicals/Step1_pca.qmd</code> and run the code cells alongside the lecture.</li>
+</ol>
 
 
 </section>

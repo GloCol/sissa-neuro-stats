@@ -1,0 +1,264 @@
+---
+title: "Lecture 2: Continuous Distributions, CLT & Confidence Intervals"
+subtitle: "SISSA PhD in Neuroscience - Practical Lab"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+filters:
+  - shinylive
+---
+
+## Step 1: Intuition Playground (30 min)
+
+### The "Dance of Confidence Intervals" Sandbox
+In the theoretical lecture, we saw that the sample mean $\bar{X}$ is itself a random variable with sampling variance $\sigma^2 / n$. Its confidence interval is given by:
+$$IC_{1-\alpha} = \left[\bar{x} - t_{n-1, 1-\frac{\alpha}{2}}\frac{s}{\sqrt{n}}, \; \bar{x} + t_{n-1, 1-\frac{\alpha}{2}}\frac{s}{\sqrt{n}}\right]$$
+
+A frequent mistake is thinking that a 95% confidence interval means *"there is a 95% probability that the true parameter $\mu$ lies within this specific interval."* 
+
+Use the simulator below to simulate 50 repeated experiments from a population with true mean $\mu = 30$:
+1. Check how many calculated intervals actually intersect the true dashed line $\mu = 30$.
+2. Change the sample size $n$ from 5 to 50: observe what happens to interval widths.
+3. Compare the coverage between the normal z-quantile and the Student's t-quantile when sample size $n$ is very small ($n = 4$).
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 560
+
+library(shiny)
+
+ui <- fluidPage(
+  titlePanel("Sampling Distribution & Confidence Intervals"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("n_samples", "Sample Size (n per experiment):", min = 3, max = 60, value = 8, step = 1),
+      sliderInput("conf_level", "Confidence Level (1 - α):", min = 0.80, max = 0.99, value = 0.95, step = 0.01),
+      radioButtons("dist_type", "Interval Method:",
+                   choices = c("Student's t-quantile (Exact)" = "t", "Gaussian z-quantile (CLT approx)" = "z")),
+      actionButton("resim", "Re-run 50 Experiments", class = "btn-primary")
+    ),
+    mainPanel(
+      plotOutput("ciPlot", height = "460px")
+    )
+  )
+)
+
+server <- function(input, output) {
+  sim_data <- reactive({
+    input$resim
+    mu <- 30
+    sigma <- 8
+    k <- 50
+    n <- input$n_samples
+    
+    means <- numeric(k)
+    lower <- numeric(k)
+    upper <- numeric(k)
+    
+    alpha <- 1 - input$conf_level
+    
+    for (i in 1:k) {
+      samp <- rnorm(n, mean = mu, sd = sigma)
+      m <- mean(samp)
+      s <- sd(samp)
+      se <- s / sqrt(n)
+      
+      crit <- if (input$dist_type == "t") qt(1 - alpha/2, df = n - 1) else qnorm(1 - alpha/2)
+      
+      means[i] <- m
+      lower[i] <- m - crit * se
+      upper[i] <- m + crit * se
+    }
+    
+    covers <- (lower <= mu) & (upper >= mu)
+    list(means = means, lower = lower, upper = upper, covers = covers, mu = mu)
+  })
+
+  output$ciPlot <- renderPlot({
+    res <- sim_data()
+    k <- length(res$means)
+    coverage_rate <- mean(res$covers) * 100
+    
+    par(mar = c(4.5, 4.5, 3, 1))
+    plot(0, 0, type = "n", xlim = c(15, 45), ylim = c(1, k),
+         xlab = "Estimated Mean (with Confidence Interval)", ylab = "Experiment Index (1 to 50)",
+         main = paste0("Empirical Coverage: ", coverage_rate, "% (Nominal: ", round((1 - (1 - input$conf_level))*100), "%)"))
+    
+    abline(v = res$mu, col = "black", lwd = 2, lty = 2)
+    
+    for (i in 1:k) {
+      col_line <- if (res$covers[i]) "steelblue" else "firebrick"
+      lines(c(res$lower[i], res$upper[i]), c(i, i), col = col_line, lwd = 1.8)
+      points(res$means[i], i, pch = 20, col = col_line, cex = 0.9)
+    }
+    legend("topright", legend = c("Captures True μ", "Misses True μ", "True μ (Ground Truth)"),
+           col = c("steelblue", "firebrick", "black"), lty = c(1, 1, 2), lwd = 2, bty = "n")
+  })
+}
+
+shinyApp(ui, server)
+```
+
+---
+
+## Step 2: "Code-Along & Fix-It" Lab (85 min)
+
+We use single-unit timing data: `data/lecture2_neural_timing.csv`.
+
+### Exercise 1: Empirical CDF vs. Theoretical Distributions
+
+In continuous distributions, the probability of obtaining an exact value is zero ($P(X = y) = 0$). We evaluate intervals using the Cumulative Distribution Function (CDF):
+$$F_X(t) = P(X \le t) = \int_{-\infty}^t f_X(x)\,dx$$
+
+Let's test whether baseline resting membrane potential (`v_rest_mv`) matches a Gaussian model $\mathcal{N}(\mu, \sigma^2)$.
+
+```{r}
+# 1. Load the dataset
+timing <- read.csv("../data/lecture2_neural_timing.csv")
+v_rest <- timing$v_rest_mv
+
+# 2. Compute empirical summary estimates
+mu_hat <- mean(v_rest)
+s_hat <- sd(v_rest)
+
+# 3. Compute Empirical Cumulative Distribution Function (ECDF)
+ecdf_vrest <- ecdf(v_rest)
+
+# Plot empirical CDF against theoretical Gaussian CDF
+grid_vals <- seq(min(v_rest) - 2, max(v_rest) + 2, length.out = 200)
+plot(ecdf_vrest, verticals = TRUE, do.points = FALSE, col = "steelblue", lwd = 2,
+     main = "Empirical vs. Theoretical Normal CDF",
+     xlab = "Membrane Potential (mV)", ylab = "P(V <= t)")
+lines(grid_vals, pnorm(grid_vals, mean = mu_hat, sd = s_hat), col = "firebrick", lwd = 2, lty = 2)
+legend("topleft", legend = c("Empirical ECDF", "Theoretical Gaussian"),
+       col = c("steelblue", "firebrick"), lty = c(1, 2), lwd = 2, bty = "n")
+```
+
+---
+
+### Exercise 2: Building Quantile-Quantile (Q-Q) Plots Manually
+
+From the theoretical lecture, a Q-Q plot compares empirical sample quantiles $Q(q)$ against theoretical quantiles $Q_P(q) = F_X^{-1}(q)$ for probability steps $q \in (0, 1)$.
+
+Below is an intentionally broken function that attempts to build a normal Q-Q plot for inter-spike intervals (`isi_ms`):
+
+```r
+# --- BROKEN CODE TASK ---
+# The function below has two bugs:
+# 1. Probabilities q are wrongly spaced or out of range.
+# 2. It compares against theoretical quantiles of the wrong distribution without parameter estimates.
+
+broken_qq_plot <- function(data_vec) {
+  n <- length(data_vec)
+  sorted_data <- sort(data_vec)
+  
+  # BUG 1: Probabilities must be within (0, 1). Using 1:n includes 1.0 where qnorm() returns +Inf
+  # FIX: Use the standard Hazen or Weibull grid: q = (1:n - 0.5) / n
+  q_grid <- (1:n) / n # <-- FIX THIS LINE
+  
+  # Sample quantiles
+  sample_quantiles <- sorted_data
+  
+  # BUG 2: Theoretical quantiles need to be standardized using sample mean and sd
+  theoretical_quantiles <- qnorm(q_grid, mean = 0, sd = 1) # Standard normal
+  
+  plot(theoretical_quantiles, sample_quantiles,
+       xlab = "Theoretical Normal Quantiles",
+       ylab = "Empirical Quantiles",
+       main = "Normal Q-Q Plot", pch = 19, col = "purple")
+  abline(lm(sample_quantiles ~ theoretical_quantiles), col = "red", lwd = 2)
+}
+
+# Run the function on ISI data
+broken_qq_plot(timing$isi_ms)
+```
+
+**Task:** Fix line 11 so that `q_grid <- (1:n - 0.5) / n`. Observe the severe right-tail curvature. Why does inter-spike interval data deviate systematically from the straight line?
+
+---
+
+### Exercise 3: Simulating the Central Limit Theorem (CLT)
+
+The CLT states that the standardized mean of independent, identically distributed variables converges to $\mathcal{N}(0, 1)$ as $n \to \infty$, regardless of the underlying distribution (as long as $\sigma^2 < \infty$).
+
+Let's draw samples from the skewed `isi_ms` distribution with sample sizes $n = 3, 10, 50$:
+
+```{r}
+set.seed(42)
+n_reps <- 2000
+
+# Function to generate sampling distribution of the mean
+sample_means <- function(pop, n, reps) {
+  replicate(reps, mean(sample(pop, size = n, replace = TRUE)))
+}
+
+means_n3  <- sample_means(timing$isi_ms, n = 3,  reps = n_reps)
+means_n10 <- sample_means(timing$isi_ms, n = 10, reps = n_reps)
+means_n50 <- sample_means(timing$isi_ms, n = 50, reps = n_reps)
+
+par(mfrow = c(1, 3))
+hist(means_n3,  breaks = 30, col = "salmon", border = "white", main = "n = 3 (Skewed)", xlab = "Mean ISI")
+hist(means_n10, breaks = 30, col = "orange", border = "white", main = "n = 10", xlab = "Mean ISI")
+hist(means_n50, breaks = 30, col = "forestgreen", border = "white", main = "n = 50 (Gaussian)", xlab = "Mean ISI")
+```
+
+---
+
+### Exercise 4: Standard Deviation vs. Standard Error vs. Confidence Interval
+
+Slide 40 illustrates the distinction between Range, SD, SE, and CI as sample size changes.
+
+Complete the calculation of error metrics for behavioral reaction times (`timing$rt_ms`):
+
+```r
+# --- TASK: COMPLETE THE METRICS ---
+calc_error_metrics <- function(x, alpha = 0.05) {
+  n <- length(x)
+  m <- mean(x)
+  s <- sd(x)
+  
+  # Standard Error of the Mean (SE)
+  se <- s / sqrt(n)
+  
+  # Student's t critical value
+  t_crit <- qt(1 - alpha/2, df = n - 1)
+  
+  # 95% Confidence Interval bounds
+  ci_lower <- m - t_crit * se
+  ci_upper <- m + t_crit * se
+  
+  return(data.frame(
+    Mean = m,
+    SD = s,
+    SE = se,
+    CI_Width = ci_upper - ci_lower
+  ))
+}
+
+# Compare a small pilot sample (n = 5) vs the full cohort (n = 120)
+set.seed(123)
+pilot_sample <- sample(timing$rt_ms, size = 5)
+full_sample  <- timing$rt_ms
+
+rbind(
+  Pilot_N5  = calc_error_metrics(pilot_sample),
+  Cohort_N120 = calc_error_metrics(full_sample)
+)
+```
+
+Notice that as $N$ increases:
+* $\text{SD}$ stays approximately constant (it measures population spread).
+* $\text{SE}$ and the $\text{CI}$ shrink proportionally to $1/\sqrt{n}$ (they measure precision of the mean estimate).
+
+---
+
+## Step 3: Peer Code Review & Diagnostic Discussion (20 min)
+
+Form pairs and compare outputs:
+
+1. **The Small-$N$ Student's $t$ Penalty:**  
+   Compare $t_{n-1, 0.975}$ when $n = 4$ ($df = 3 \Rightarrow t \approx 3.18$) vs. $z_{0.975} = 1.96$. What happens when researchers with small sample sizes use $z$ instead of $t$?
+2. **Q-Q Plot Diagnosis:**  
+   Inspect the Q-Q plot for `timing$evoked_lat_ms`. What shape appears if you take the natural log (`log(timing$evoked_lat_ms)`) before running `qqnorm()`?

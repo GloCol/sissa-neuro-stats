@@ -5,12 +5,14 @@ subtitle: "SISSA PhD Course"
 
 Welcome to the practical laboratory component of the Statistics course.
 
-### Course Schedule Lecture1
-- **Step 1**: Exploratory Data Analysis, Outlier Detection, Covariance & PCA
-- **Step 2**: Continuous Distributions, the CLT, and Confidence Intervals
-- **Step 3**: Hypothesis Testing, Power Analysis, and $t$-Tests
-- **Step 4**: Correlation, Linear Regression & Multiple Comparisons
-- **Step 5**: Mixed Effects Models & "Bring Your Own Data" Capstone
+### Course Practicals
+- 🔬 **[Lecture 1: Exploratory Data Analysis, Covariance & PCA](practicals/Step1_pca.qmd)**
+- 📊 **Lecture 2: Continuous Distributions, CLT & Confidence Intervals** *(Coming soon)*
+- 🧪 **Lecture 3: Hypothesis Testing, Power & t-Tests** *(Coming soon)*
+- 📈 **Lecture 4: Correlation, Linear Regression & Multiplicity** *(Coming soon)*
+- 🧠 **Lecture 5: Mixed Effects & Bring-Your-Own-Data Capstone** *(Coming soon)*
 
 ### Setup Instructions
-Download the repository files to your computer, open `sissa-neuro-stats.Rproj`, and begin with Day 1 under the **Days** menu above.
+1. Download the repository files to your computer.
+2. Open `sissa-neuro-stats.Rproj` in RStudio.
+3. Open `practicals/Step1_pca.qmd` and run the code cells alongside the lecture.
