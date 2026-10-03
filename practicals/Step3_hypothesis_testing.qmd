@@ -1,0 +1,219 @@
+---
+title: "Lecture 3: Hypothesis Testing, Power & Comparative Tests"
+subtitle: "SISSA PhD in Neuroscience - Practical Lab"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+filters:
+  - shinylive
+---
+
+## Step 1: Intuition Playground (30 min)
+
+### The Power, Effect Size, and Sample Size Trade-Off
+In null-hypothesis significance testing (NHST), we specify:
+* Null Hypothesis ($H_0$): $\mu_1 - \mu_2 = 0$
+* Significance Threshold ($\alpha$): Type I error rate (false positive)
+* Statistical Power ($1 - \beta$): Probability of correctly rejecting $H_0$ given a true effect size $\delta = (\mu_1 - \mu_2)/\sigma$ (Cohen's $d$)
+
+Use the interactive power calculator below:
+1. Increase the sample size $n$ per group and notice how the sampling distribution of the alternative hypothesis pulls away from the critical rejection boundary.
+2. In neuroscience experiments, small animal cohorts ($n = 4$ to $6$) often suffer from low power ($< 40\%$). What effect size is required to achieve standard $80\%$ power with $n = 5$?
+3. Toggle the $\alpha$ slider from $0.05$ to $0.01$: observe the direct penalty imposed on power.
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 580
+
+library(shiny)
+
+ui <- fluidPage(
+  titlePanel("Statistical Power & Type I / Type II Errors"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("n_per_group", "Sample Size per Group (n):", min = 3, max = 50, value = 10, step = 1),
+      sliderInput("cohen_d", "True Effect Size (Cohen's d):", min = 0.1, max = 2.0, value = 0.8, step = 0.05),
+      sliderInput("alpha_lvl", "Significance Level (α):", min = 0.01, max = 0.10, value = 0.05, step = 0.01),
+      helpText("Shaded green indicates statistical power (1 - β). Shaded red on the null curve indicates α (false positive).")
+    ),
+    mainPanel(
+      plotOutput("powerPlot", height = "460px"),
+      verbatimTextOutput("powerSummary")
+    )
+  )
+)
+
+server <- function(input, output) {
+  p_calc <- reactive({
+    n <- input$n_per_group
+    d <- input$cohen_d
+    alpha <- input$alpha_lvl
+    
+    # Standard error of difference in means (assuming pooled sd = 1)
+    se <- sqrt(2 / n)
+    crit_val <- qnorm(1 - alpha / 2) * se
+    
+    # Power = P(Z > crit_val | mean = d) + P(Z < -crit_val | mean = d)
+    power <- 1 - pnorm(crit_val, mean = d, sd = se) + pnorm(-crit_val, mean = d, sd = se)
+    list(se = se, crit = crit_val, power = power, d = d, alpha = alpha)
+  })
+
+  output$powerPlot <- renderPlot({
+    res <- p_calc()
+    x <- seq(-3, res$d + 4, length.out = 600)
+    
+    y_null <- dnorm(x, mean = 0, sd = res$se)
+    y_alt  <- dnorm(x, mean = res$d, sd = res$se)
+    
+    par(mar = c(4.5, 4.5, 3, 1))
+    plot(x, y_null, type = "l", lwd = 2.5, col = "black",
+         ylim = c(0, max(c(y_null, y_alt)) * 1.15),
+         xlab = "Difference Between Means", ylab = "Density",
+         main = paste0("Power (1 - β): ", round(res$power * 100, 1), "% | Sample Size n = ", input$n_per_group))
+    lines(x, y_alt, lwd = 2.5, col = "forestgreen", lty = 2)
+    
+    # Fill Type I Error (alpha)
+    x_rejection <- x[x >= res$crit]
+    polygon(c(res$crit, x_rejection, max(x_rejection)),
+            c(0, dnorm(x_rejection, 0, res$se), 0),
+            col = rgb(1, 0, 0, 0.35), border = NA)
+            
+    # Fill Power (1 - beta)
+    polygon(c(res$crit, x_rejection, max(x_rejection)),
+            c(0, dnorm(x_rejection, res$d, res$se), 0),
+            col = rgb(0.1, 0.7, 0.2, 0.4), border = NA)
+            
+    abline(v = res$crit, col = "firebrick", lwd = 2, lty = 3)
+    legend("topright", legend = c("H0: No Effect (d = 0)", "H1: True Effect (d)", "Rejection Threshold"),
+           col = c("black", "forestgreen", "firebrick"), lty = c(1, 2, 3), lwd = 2, bty = "n")
+  })
+  
+  output$powerSummary <- renderPrint({
+    res <- p_calc()
+    cat("Critical Difference Threshold:", round(res$crit, 3), "\n")
+    cat("Probability of Type II Error (Beta):", round(1 - res$power, 4), "\n")
+  })
+}
+
+shinyApp(ui, server)
+```
+
+---
+
+## Step 2: "Code-Along & Fix-It" Lab (85 min)
+
+We load the hippocampal slice dataset: `data/lecture3_synaptic_plasticity.csv`.
+
+### Exercise 1: Paired vs. Two-Sample Independent $t$-Test
+
+In our experiment, each hippocampal slice has a baseline fEPSP slope measured *before* theta-burst stimulation and a post-stimulation response measured *in the same slice*.
+
+```{r}
+ltp_data <- read.csv("../data/lecture3_synaptic_plasticity.csv")
+ctrl_slices <- subset(ltp_data, group == "Control")
+
+head(ctrl_slices[, c("slice_id", "baseline_fepsp", "post_fepsp")])
+```
+
+#### The Paired Design Advantage:
+Because baseline responses vary from slice to slice (biological variability), treating repeated measures as independent samples inflates the residual error variance and weakens statistical sensitivity.
+
+Let's verify this mathematically by running both tests:
+
+```r
+# --- TASK: COMPARE PAIRED VS UNPAIRED DESIGNS ---
+# 1. Independent two-sample test (INCORRECT DESIGN FOR THIS EXPERIMENT)
+t_unpaired <- t.test(ctrl_slices$post_fepsp, ctrl_slices$baseline_fepsp, paired = FALSE)
+
+# 2. Paired t-test (ACCOUNTING FOR WITHIN-SLICE REPEATED MEASURES)
+t_paired   <- t.test(ctrl_slices$post_fepsp, ctrl_slices$baseline_fepsp, paired = TRUE)
+
+cat("Unpaired p-value:", format.pval(t_unpaired$p.value, digits = 3), "\n")
+cat("Paired p-value:  ", format.pval(t_paired$p.value, digits = 3), "\n")
+```
+
+Observe how pairing eliminates slice-to-slice baseline shifts, yielding a much tighter test statistic and higher sensitivity.
+
+---
+
+### Exercise 2: The Student's vs. Welch's $t$-Test Trap
+
+Student's classic two-sample $t$-test assumes equal population variances ($\sigma_1^2 = \sigma_2^2$). In neurobiology, pharmacological or optogenetic perturbations frequently alter both the mean and the variance of neural responses.
+
+Compare the LTP magnitude (`post_fepsp`) between `Control` and `Drug_Washout`:
+
+```r
+# --- BROKEN CODE CHALLENGE ---
+# The researcher runs a classical Student's t-test with var.equal = TRUE:
+broken_test <- t.test(post_fepsp ~ group, data = ltp_data, var.equal = TRUE)
+print(broken_test)
+
+# Check the variance difference:
+tapply(ltp_data$post_fepsp, ltp_data$group, var)
+```
+
+#### The Fix:
+When sample sizes or group variances differ, Student's pooled variance estimate is biased. **Welch's $t$-test** adjusts the degrees of freedom using the Satterthwaite approximation and does not assume equal variances:
+
+```r
+# FIX: Use Welch's t-test (default in R)
+welch_test <- t.test(post_fepsp ~ group, data = ltp_data, var.equal = FALSE)
+print(welch_test)
+```
+
+---
+
+### Exercise 3: Non-Parametric Alternatives (Wilcoxon / Mann-Whitney)
+
+Count data such as spontaneous miniature EPSC frequencies (`mepsc_freq_hz`) or action potential counts are strictly non-negative, discrete, and strongly right-skewed.
+
+```{r}
+# Inspect skewness and normality
+par(mfrow = c(1, 2))
+hist(ltp_data$mepsc_freq_hz[ltp_data$group == "Control"],
+     col = "steelblue", main = "Control mEPSCs", xlab = "Hz")
+hist(ltp_data$mepsc_freq_hz[ltp_data$group == "Drug_Washout"],
+     col = "salmon", main = "Drug mEPSCs", xlab = "Hz")
+```
+
+Because Gaussian assumptions are violated, we apply the two-sample non-parametric Wilcoxon Rank-Sum test (Mann-Whitney $U$ test):
+
+```r
+# Non-parametric rank-based comparison
+wilcox_result <- wilcox.test(mepsc_freq_hz ~ group, data = ltp_data, exact = FALSE)
+print(wilcox_result)
+```
+
+---
+
+### Exercise 4: Categorical Contingency Analysis ($\chi^2$ & Fisher's Exact)
+
+We recorded whether slices achieved synaptic extinction learning (`1` = Success, `0` = Failure).
+
+```r
+# Build 2x2 contingency table
+tab <- table(ltp_data$group, ltp_data$extinction_success)
+colnames(tab) <- c("Failure", "Success")
+print(tab)
+
+# Chi-Square Test of Independence
+chi_res <- chisq.test(tab, correct = TRUE) # Yates continuity correction
+print(chi_res)
+
+# When cell counts are small (n < 5 in any cell), use Fisher's Exact Test:
+fisher_res <- fisher.test(tab)
+print(fisher_res)
+```
+
+---
+
+## Step 3: Peer Code Review & Diagnostic Discussion (20 min)
+
+With your lab partner, evaluate these three methodological diagnostic questions:
+
+1. **Defaulting to Welch:** Why is it good scientific practice to make Welch's $t$-test (`var.equal = FALSE`) your default choice over Student's $t$-test, even if variances look similar?
+2. **Effect Size vs. $p$-value:** If an experiment reports $p = 0.0001$ with $n = 1000$ per group, does that guarantee the biological effect is meaningful? Calculate Cohen's $d$ using `lsr::cohensD()` or manual computation:
+   $$d = \frac{\bar{x}_1 - \bar{x}_2}{s_{\text{pooled}}}$$
+3. **Paired Permutation Intuition:** How does a paired test fundamentally reduce to a single-sample test on differences: $D_i = X_{\text{post}, i} - X_{\text{pre}, i}$ tested against $H_0: \mu_D = 0$?
