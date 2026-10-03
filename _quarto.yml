@@ -11,6 +11,7 @@ website:
       - text: "Lectures"
         menu:
           - practicals/Step1_pca.qmd
+          - practicals/Step2_distributions.qmd
 
 format:
   html:
