@@ -7,7 +7,7 @@ Welcome to the practical laboratory component of the Statistics course.
 
 ### Course Practicals
 - 🔬 **[Lecture 1: Exploratory Data Analysis, Covariance & PCA](practicals/Step1_pca.qmd)**
-- 📊 **Lecture 2: Continuous Distributions, CLT & Confidence Intervals** *(Coming soon)*
+- 📊 **[Lecture 2: Continuous Distributions, CLT & Confidence Intervals](practicals/Step2_distributions.qmd)**
 - 🧪 **Lecture 3: Hypothesis Testing, Power & t-Tests** *(Coming soon)*
 - 📈 **Lecture 4: Correlation, Linear Regression & Multiplicity** *(Coming soon)*
 - 🧠 **Lecture 5: Mixed Effects & Bring-Your-Own-Data Capstone** *(Coming soon)*
