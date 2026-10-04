@@ -13,6 +13,7 @@ website:
           - practicals/Step1_pca.qmd
           - practicals/Step2_distributions.qmd
           - practicals/Step3_hypothesis_testing.qmd
+          - practicals/Step4_regression.qmd
 
 format:
   html:

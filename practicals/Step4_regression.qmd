@@ -1,0 +1,225 @@
+---
+title: "Lecture 4: Correlation, Linear Models & Multiplicity"
+subtitle: "SISSA PhD in Neuroscience - Practical Lab"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+filters:
+  - shinylive
+---
+
+## Step 1: Intuition Playground (30 min)
+
+### Leverage, Residuals & Influential Observations
+In Ordinary Least Squares (OLS) regression:
+$$\hat{Y} = \beta_0 + \beta_1 X + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2)$$
+
+Because the regression line minimizes the sum of squared errors $\sum e_i^2$, points located far along the predictor axis ($X$) exert high **leverage**. If their response ($Y$) deviates from the regression trend, they tilt the line disproportionately.
+
+Use the interactive simulator below:
+1. Drag the **Outlier Position ($X$)** slider from the center ($X = 0$) to the extreme periphery ($X = 5$).
+2. Adjust the **Outlier Vertical Shift ($Y$)** to introduce a large discrepancy.
+3. Observe how Cook's distance and the estimated slope $\hat{\beta}_1$ change when an outlier moves from low leverage to high leverage.
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 580
+
+library(shiny)
+
+ui <- fluidPage(
+  titlePanel("Leverage & Cook's Distance in Regression"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("outlier_x", "Outlier Position (Predictor X):", min = -4, max = 5, value = 4.2, step = 0.2),
+      sliderInput("outlier_y", "Outlier Value (Response Y):", min = -10, max = 15, value = -6, step = 0.5),
+      helpText("The blue dashed line is the true underlying relationship (slope = 1.2). The red solid line is the fitted OLS model including the outlier.")
+    ),
+    mainPanel(
+      plotOutput("regPlot", height = "440px"),
+      verbatimTextOutput("regStats")
+    )
+  )
+)
+
+server <- function(input, output) {
+  sim_pts <- reactive({
+    set.seed(42)
+    x <- rnorm(35, mean = 0, sd = 1.2)
+    y <- 1.2 * x + rnorm(35, sd = 0.9)
+    
+    # Append the interactive outlier
+    x_all <- c(x, input$outlier_x)
+    y_all <- c(y, input$outlier_y)
+    
+    mod <- lm(y_all ~ x_all)
+    cooks <- cooks.distance(mod)
+    
+    list(x = x_all, y = y_all, mod = mod, cooks = cooks)
+  })
+
+  output$regPlot <- renderPlot({
+    res <- sim_pts()
+    outlier_idx <- length(res$x)
+    is_high_cook <- res$cooks[outlier_idx] > 0.5
+    
+    par(mar = c(4.5, 4.5, 3, 1))
+    plot(res$x[-outlier_idx], res$y[-outlier_idx], pch = 19, col = "steelblue",
+         xlim = c(-5, 6), ylim = c(-12, 16),
+         xlab = "Predictor (X)", ylab = "Response (Y)",
+         main = "Impact of a Single Point on Ordinary Least Squares")
+    
+    # Highlight the outlier
+    points(res$x[outlier_idx], res$y[outlier_idx], pch = 21, bg = "red", cex = 1.8, lwd = 2)
+    text(res$x[outlier_idx], res$y[outlier_idx] + 1.2, labels = "Outlier", col = "red", font = 2)
+    
+    # Ground truth vs Fitted line
+    abline(a = 0, b = 1.2, col = "blue", lty = 2, lwd = 2)
+    abline(res$mod, col = "firebrick", lwd = 2.5)
+    
+    legend("topleft", legend = c("True Model (slope = 1.2)", "Fitted OLS Model", "Data Points"),
+           col = c("blue", "firebrick", "steelblue"), lty = c(2, 1, NA), pch = c(NA, NA, 19), lwd = 2, bty = "n")
+  })
+  
+  output$regStats <- renderPrint({
+    res <- sim_pts()
+    outlier_idx <- length(res$x)
+    cat("Fitted Slope (Beta 1):", round(coef(res$mod)[2], 3), "(Ground Truth = 1.200)\n")
+    cat("Outlier Cook's Distance:", round(res$cooks[outlier_idx], 3), "\n")
+    if (res$cooks[outlier_idx] > 0.5) {
+      cat("WARNING: Point qualifies as highly influential (Cook's D > 0.5)!\n")
+    }
+  })
+}
+
+shinyApp(ui, server)
+```
+
+---
+
+## Step 2: "Code-Along & Fix-It" Lab (85 min)
+
+We use behavioral tracking and neural activity recordings: `data/lecture4_behavior_regression.csv`.
+
+### Exercise 1: Pearson vs. Spearman Correlation
+
+Pearson's $r$ evaluates *linear* associations, whereas Spearman's rank correlation $\rho$ assesses *monotonic* associations.
+
+```{r}
+df <- read.csv("../data/lecture4_behavior_regression.csv")
+
+# Inspect relationship between Pupil Diameter and Sensory Firing Rate
+plot(df$pupil_diam, df$firing_rate, pch = 19, col = "darkorange",
+     xlab = "Normalized Pupil Diameter", ylab = "Firing Rate (Hz)",
+     main = "Arousal vs. Firing Rate (Yerkes-Dodson Curve)")
+```
+
+Calculate Pearson's and Spearman's correlation coefficients:
+
+```r
+# Linear correlation
+r_pearson  <- cor(df$pupil_diam, df$firing_rate, method = "pearson")
+
+# Rank correlation
+rho_spear  <- cor(df$pupil_diam, df$firing_rate, method = "spearman")
+
+cat("Pearson's r:  ", round(r_pearson, 3), "\n")
+cat("Spearman's rho:", round(rho_spear, 3), "\n")
+```
+
+**Discussion:** Both coefficients return values close to zero. Why? Neither metric detects non-monotonic non-linear curves (e.g., an inverted-U relationship).
+
+---
+
+### Exercise 2: Fitting Linear Models and Residual Diagnostics
+
+Model hippocampal theta rhythm oscillation frequency as a function of running velocity:
+
+$$\text{theta\_hz}_i = \beta_0 + \beta_1 \cdot \text{speed\_cms}_i + \epsilon_i$$
+
+```r
+# --- TASK: FIT OLS REGRESSION ---
+fit_theta <- lm(theta_hz ~ speed_cms, data = df)
+summary(fit_theta)
+```
+
+#### Diagnostic Plots: Checking OLS Assumptions
+Never report a linear model without inspecting residuals:
+1. **Residuals vs. Fitted:** Assesses linearity and homoscedasticity (constant variance).
+2. **Normal Q-Q Plot:** Checks normality of residuals.
+3. **Residuals vs. Leverage:** Identifies influential observations via Cook's distance lines.
+
+```r
+par(mfrow = c(2, 2))
+plot(fit_theta)
+```
+
+Look at observation **#12**:
+* It sits at extreme leverage ($X \approx 48$) with a large negative residual.
+* Cook's distance exceeds typical thresholds ($> 0.5$ or $4/n$).
+
+#### The Fix (Sensitivity Analysis):
+Re-fit the model excluding the artifact point and compare slope estimates:
+
+```r
+# Exclude observation 12
+fit_clean <- lm(theta_hz ~ speed_cms, data = df[-12, ])
+
+cat("Slope WITH outlier:   ", round(coef(fit_theta)[2], 4), "\n")
+cat("Slope WITHOUT outlier:", round(coef(fit_clean)[2], 4), "\n")
+```
+
+---
+
+### Exercise 3: Multiple Comparisons Correction (Bonferroni vs. FDR)
+
+Our recording rig captured 100 simultaneous local field potential (LFP) channels (`lfp_ch_1` to `lfp_ch_100`). We want to discover which channels correlate significantly with behavioral performance (`behavior_score`).
+
+Run 100 uncorrected hypothesis tests:
+
+```{r}
+ch_cols <- paste0("lfp_ch_", 1:100)
+p_values <- numeric(100)
+
+for (i in 1:100) {
+  test <- cor.test(df[, ch_cols[i]], df$behavior_score)
+  p_values[i] <- test$p.value
+}
+
+# Number of uncorrected "discoveries" at alpha = 0.05
+sum(p_values < 0.05)
+```
+
+Without correction, approximately $5\%$ of truly noise channels return false positives by pure chance ($100 \times 0.05 \approx 5$).
+
+Apply **Bonferroni (FWER)** and **Benjamini-Hochberg (FDR)** corrections:
+
+```r
+# --- TASK: APPLY MULTIPLE TESTING CORRECTIONS ---
+
+# 1. Family-Wise Error Rate (Bonferroni: alpha / m)
+p_bonf <- p.adjust(p_values, method = "bonferroni")
+
+# 2. False Discovery Rate (Benjamini-Hochberg)
+p_fdr  <- p.adjust(p_values, method = "BH")
+
+cat("Significant channels (Uncorrected):", sum(p_values < 0.05), "\n")
+cat("Significant channels (Bonferroni):  ", sum(p_bonf < 0.05), "\n")
+cat("Significant channels (BH / FDR):    ", sum(p_fdr < 0.05), "\n")
+
+# Which exact channels passed FDR threshold?
+which(p_fdr < 0.05)
+```
+
+---
+
+## Step 3: Peer Code Review & Diagnostic Discussion (20 min)
+
+Form pairs and compare outputs:
+
+1. **Family-Wise Error Rate vs. False Discovery Rate:**  
+   When would you recommend using Bonferroni over FDR in neuroscience? (e.g., confirmatory testing of 3 clinical candidate drugs vs. exploratory screening of 20,000 RNA-seq transcripts).
+2. **Transformations vs. Polynomials:**  
+   Return to Exercise 1 (Pupil vs. Firing Rate). Fit a quadratic term using `lm(firing_rate ~ pupil_diam + I(pupil_diam^2), data = df)`. Inspect `summary()` and the residual plot. Does adding the second-order term resolve the non-linearity?

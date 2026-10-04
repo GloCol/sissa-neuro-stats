@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Lecture 3: Hypothesis Testing, Power &amp; Comparative Tests – SISSA Practical Statistics in R</title>
+<title>Lecture 4: Correlation, Linear Models &amp; Multiplicity – SISSA Practical Statistics in R</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -205,14 +205,13 @@ window.Quarto = {
   <ul>
   <li><a href="#step-1-intuition-playground-30-min" id="toc-step-1-intuition-playground-30-min" class="nav-link active" data-scroll-target="#step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</a>
   <ul class="collapse">
-  <li><a href="#the-power-effect-size-and-sample-size-trade-off" id="toc-the-power-effect-size-and-sample-size-trade-off" class="nav-link" data-scroll-target="#the-power-effect-size-and-sample-size-trade-off">The Power, Effect Size, and Sample Size Trade-Off</a></li>
+  <li><a href="#leverage-residuals-influential-observations" id="toc-leverage-residuals-influential-observations" class="nav-link" data-scroll-target="#leverage-residuals-influential-observations">Leverage, Residuals &amp; Influential Observations</a></li>
   </ul></li>
   <li><a href="#step-2-code-along-fix-it-lab-85-min" id="toc-step-2-code-along-fix-it-lab-85-min" class="nav-link" data-scroll-target="#step-2-code-along-fix-it-lab-85-min">Step 2: “Code-Along &amp; Fix-It” Lab (85 min)</a>
   <ul class="collapse">
-  <li><a href="#exercise-1-paired-vs.-two-sample-independent-t-test" id="toc-exercise-1-paired-vs.-two-sample-independent-t-test" class="nav-link" data-scroll-target="#exercise-1-paired-vs.-two-sample-independent-t-test">Exercise 1: Paired vs.&nbsp;Two-Sample Independent <span class="math inline">\(t\)</span>-Test</a></li>
-  <li><a href="#exercise-2-the-students-vs.-welchs-t-test-trap" id="toc-exercise-2-the-students-vs.-welchs-t-test-trap" class="nav-link" data-scroll-target="#exercise-2-the-students-vs.-welchs-t-test-trap">Exercise 2: The Student’s vs.&nbsp;Welch’s <span class="math inline">\(t\)</span>-Test Trap</a></li>
-  <li><a href="#exercise-3-non-parametric-alternatives-wilcoxon-mann-whitney" id="toc-exercise-3-non-parametric-alternatives-wilcoxon-mann-whitney" class="nav-link" data-scroll-target="#exercise-3-non-parametric-alternatives-wilcoxon-mann-whitney">Exercise 3: Non-Parametric Alternatives (Wilcoxon / Mann-Whitney)</a></li>
-  <li><a href="#exercise-4-categorical-contingency-analysis-chi2-fishers-exact" id="toc-exercise-4-categorical-contingency-analysis-chi2-fishers-exact" class="nav-link" data-scroll-target="#exercise-4-categorical-contingency-analysis-chi2-fishers-exact">Exercise 4: Categorical Contingency Analysis (<span class="math inline">\(\chi^2\)</span> &amp; Fisher’s Exact)</a></li>
+  <li><a href="#exercise-1-pearson-vs.-spearman-correlation" id="toc-exercise-1-pearson-vs.-spearman-correlation" class="nav-link" data-scroll-target="#exercise-1-pearson-vs.-spearman-correlation">Exercise 1: Pearson vs.&nbsp;Spearman Correlation</a></li>
+  <li><a href="#exercise-2-fitting-linear-models-and-residual-diagnostics" id="toc-exercise-2-fitting-linear-models-and-residual-diagnostics" class="nav-link" data-scroll-target="#exercise-2-fitting-linear-models-and-residual-diagnostics">Exercise 2: Fitting Linear Models and Residual Diagnostics</a></li>
+  <li><a href="#exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr" id="toc-exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr" class="nav-link" data-scroll-target="#exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr">Exercise 3: Multiple Comparisons Correction (Bonferroni vs.&nbsp;FDR)</a></li>
   </ul></li>
   <li><a href="#step-3-peer-code-review-diagnostic-discussion-20-min" id="toc-step-3-peer-code-review-diagnostic-discussion-20-min" class="nav-link" data-scroll-target="#step-3-peer-code-review-diagnostic-discussion-20-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (20 min)</a></li>
   </ul>
@@ -223,7 +222,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lecture 3: Hypothesis Testing, Power &amp; Comparative Tests</h1>
+<h1 class="title">Lecture 4: Correlation, Linear Models &amp; Multiplicity</h1>
 <p class="subtitle lead">SISSA PhD in Neuroscience - Practical Lab</p>
 </div>
 
@@ -243,10 +242,11 @@ window.Quarto = {
 
 <section id="step-1-intuition-playground-30-min" class="level2">
 <h2 class="anchored" data-anchor-id="step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</h2>
-<section id="the-power-effect-size-and-sample-size-trade-off" class="level3">
-<h3 class="anchored" data-anchor-id="the-power-effect-size-and-sample-size-trade-off">The Power, Effect Size, and Sample Size Trade-Off</h3>
-<p>In null-hypothesis significance testing (NHST), we specify: * Null Hypothesis (<span class="math inline">\(H_0\)</span>): <span class="math inline">\(\mu_1 - \mu_2 = 0\)</span> * Significance Threshold (<span class="math inline">\(\alpha\)</span>): Type I error rate (false positive) * Statistical Power (<span class="math inline">\(1 - \beta\)</span>): Probability of correctly rejecting <span class="math inline">\(H_0\)</span> given a true effect size <span class="math inline">\(\delta = (\mu_1 - \mu_2)/\sigma\)</span> (Cohen’s <span class="math inline">\(d\)</span>)</p>
-<p>Use the interactive power calculator below: 1. Increase the sample size <span class="math inline">\(n\)</span> per group and notice how the sampling distribution of the alternative hypothesis pulls away from the critical rejection boundary. 2. In neuroscience experiments, small animal cohorts (<span class="math inline">\(n = 4\)</span> to <span class="math inline">\(6\)</span>) often suffer from low power (<span class="math inline">\(&lt; 40\%\)</span>). What effect size is required to achieve standard <span class="math inline">\(80\%\)</span> power with <span class="math inline">\(n = 5\)</span>? 3. Toggle the <span class="math inline">\(\alpha\)</span> slider from <span class="math inline">\(0.05\)</span> to <span class="math inline">\(0.01\)</span>: observe the direct penalty imposed on power.</p>
+<section id="leverage-residuals-influential-observations" class="level3">
+<h3 class="anchored" data-anchor-id="leverage-residuals-influential-observations">Leverage, Residuals &amp; Influential Observations</h3>
+<p>In Ordinary Least Squares (OLS) regression: <span class="math display">\[\hat{Y} = \beta_0 + \beta_1 X + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2)\]</span></p>
+<p>Because the regression line minimizes the sum of squared errors <span class="math inline">\(\sum e_i^2\)</span>, points located far along the predictor axis (<span class="math inline">\(X\)</span>) exert high <strong>leverage</strong>. If their response (<span class="math inline">\(Y\)</span>) deviates from the regression trend, they tilt the line disproportionately.</p>
+<p>Use the interactive simulator below: 1. Drag the <strong>Outlier Position (<span class="math inline">\(X\)</span>)</strong> slider from the center (<span class="math inline">\(X = 0\)</span>) to the extreme periphery (<span class="math inline">\(X = 5\)</span>). 2. Adjust the <strong>Outlier Vertical Shift (<span class="math inline">\(Y\)</span>)</strong> to introduce a large discrepancy. 3. Observe how Cook’s distance and the estimated slope <span class="math inline">\(\hat{\beta}_1\)</span> change when an outlier moves from low leverage to high leverage.</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -256,70 +256,67 @@ window.Quarto = {
 library(shiny)
 
 ui &lt;- fluidPage(
-  titlePanel("Statistical Power &amp; Type I / Type II Errors"),
+  titlePanel("Leverage &amp; Cook's Distance in Regression"),
   sidebarLayout(
     sidebarPanel(
-      sliderInput("n_per_group", "Sample Size per Group (n):", min = 3, max = 50, value = 10, step = 1),
-      sliderInput("cohen_d", "True Effect Size (Cohen's d):", min = 0.1, max = 2.0, value = 0.8, step = 0.05),
-      sliderInput("alpha_lvl", "Significance Level (α):", min = 0.01, max = 0.10, value = 0.05, step = 0.01),
-      helpText("Shaded green indicates statistical power (1 - β). Shaded red on the null curve indicates α (false positive).")
+      sliderInput("outlier_x", "Outlier Position (Predictor X):", min = -4, max = 5, value = 4.2, step = 0.2),
+      sliderInput("outlier_y", "Outlier Value (Response Y):", min = -10, max = 15, value = -6, step = 0.5),
+      helpText("The blue dashed line is the true underlying relationship (slope = 1.2). The red solid line is the fitted OLS model including the outlier.")
     ),
     mainPanel(
-      plotOutput("powerPlot", height = "460px"),
-      verbatimTextOutput("powerSummary")
+      plotOutput("regPlot", height = "440px"),
+      verbatimTextOutput("regStats")
     )
   )
 )
 
 server &lt;- function(input, output) {
-  p_calc &lt;- reactive({
-    n &lt;- input$n_per_group
-    d &lt;- input$cohen_d
-    alpha &lt;- input$alpha_lvl
+  sim_pts &lt;- reactive({
+    set.seed(42)
+    x &lt;- rnorm(35, mean = 0, sd = 1.2)
+    y &lt;- 1.2 * x + rnorm(35, sd = 0.9)
     
-    # Standard error of difference in means (assuming pooled sd = 1)
-    se &lt;- sqrt(2 / n)
-    crit_val &lt;- qnorm(1 - alpha / 2) * se
+    # Append the interactive outlier
+    x_all &lt;- c(x, input$outlier_x)
+    y_all &lt;- c(y, input$outlier_y)
     
-    # Power = P(Z &gt; crit_val | mean = d) + P(Z &lt; -crit_val | mean = d)
-    power &lt;- 1 - pnorm(crit_val, mean = d, sd = se) + pnorm(-crit_val, mean = d, sd = se)
-    list(se = se, crit = crit_val, power = power, d = d, alpha = alpha)
+    mod &lt;- lm(y_all ~ x_all)
+    cooks &lt;- cooks.distance(mod)
+    
+    list(x = x_all, y = y_all, mod = mod, cooks = cooks)
   })
 
-  output$powerPlot &lt;- renderPlot({
-    res &lt;- p_calc()
-    x &lt;- seq(-3, res$d + 4, length.out = 600)
-    
-    y_null &lt;- dnorm(x, mean = 0, sd = res$se)
-    y_alt  &lt;- dnorm(x, mean = res$d, sd = res$se)
+  output$regPlot &lt;- renderPlot({
+    res &lt;- sim_pts()
+    outlier_idx &lt;- length(res$x)
+    is_high_cook &lt;- res$cooks[outlier_idx] &gt; 0.5
     
     par(mar = c(4.5, 4.5, 3, 1))
-    plot(x, y_null, type = "l", lwd = 2.5, col = "black",
-         ylim = c(0, max(c(y_null, y_alt)) * 1.15),
-         xlab = "Difference Between Means", ylab = "Density",
-         main = paste0("Power (1 - β): ", round(res$power * 100, 1), "% | Sample Size n = ", input$n_per_group))
-    lines(x, y_alt, lwd = 2.5, col = "forestgreen", lty = 2)
+    plot(res$x[-outlier_idx], res$y[-outlier_idx], pch = 19, col = "steelblue",
+         xlim = c(-5, 6), ylim = c(-12, 16),
+         xlab = "Predictor (X)", ylab = "Response (Y)",
+         main = "Impact of a Single Point on Ordinary Least Squares")
     
-    # Fill Type I Error (alpha)
-    x_rejection &lt;- x[x &gt;= res$crit]
-    polygon(c(res$crit, x_rejection, max(x_rejection)),
-            c(0, dnorm(x_rejection, 0, res$se), 0),
-            col = rgb(1, 0, 0, 0.35), border = NA)
-            
-    # Fill Power (1 - beta)
-    polygon(c(res$crit, x_rejection, max(x_rejection)),
-            c(0, dnorm(x_rejection, res$d, res$se), 0),
-            col = rgb(0.1, 0.7, 0.2, 0.4), border = NA)
-            
-    abline(v = res$crit, col = "firebrick", lwd = 2, lty = 3)
-    legend("topright", legend = c("H0: No Effect (d = 0)", "H1: True Effect (d)", "Rejection Threshold"),
-           col = c("black", "forestgreen", "firebrick"), lty = c(1, 2, 3), lwd = 2, bty = "n")
+    # Highlight the outlier
+    points(res$x[outlier_idx], res$y[outlier_idx], pch = 21, bg = "red", cex = 1.8, lwd = 2)
+    text(res$x[outlier_idx], res$y[outlier_idx] + 1.2, labels = "Outlier", col = "red", font = 2)
+    
+    # Ground truth vs Fitted line
+    abline(a = 0, b = 1.2, col = "blue", lty = 2, lwd = 2)
+    abline(res$mod, col = "firebrick", lwd = 2.5)
+    
+    legend("topleft", legend = c("True Model (slope = 1.2)", "Fitted OLS Model", "Data Points"),
+           col = c("blue", "firebrick", "steelblue"), lty = c(2, 1, NA), pch = c(NA, NA, 19), lwd = 2, bty = "n")
   })
   
-  output$powerSummary &lt;- renderPrint({
-    res &lt;- p_calc()
-    cat("Critical Difference Threshold:", round(res$crit, 3), "\n")
-    cat("Probability of Type II Error (Beta):", round(1 - res$power, 4), "\n")
+  output$regStats &lt;- renderPrint({
+    res &lt;- sim_pts()
+    outlier_idx &lt;- length(res$x)
+    cat("Fitted Slope (Beta 1):", round(coef(res$mod)[2], 3), "(Ground Truth = 1.200)\n")
+    cat("Outlier Cook's Distance:", round(res$cooks[outlier_idx], 3), "\n")
+    if (res$cooks[outlier_idx] &gt; 0.5) {
+      cat("WARNING: Point qualifies as highly influential (Cook's D &gt; 0.5)!\n")
+    }
   })
 }
 
@@ -329,117 +326,114 @@ shinyApp(ui, server)</code></pre>
 </section>
 <section id="step-2-code-along-fix-it-lab-85-min" class="level2">
 <h2 class="anchored" data-anchor-id="step-2-code-along-fix-it-lab-85-min">Step 2: “Code-Along &amp; Fix-It” Lab (85 min)</h2>
-<p>We load the hippocampal slice dataset: <code>data/lecture3_synaptic_plasticity.csv</code>.</p>
-<section id="exercise-1-paired-vs.-two-sample-independent-t-test" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-1-paired-vs.-two-sample-independent-t-test">Exercise 1: Paired vs.&nbsp;Two-Sample Independent <span class="math inline">\(t\)</span>-Test</h3>
-<p>In our experiment, each hippocampal slice has a baseline fEPSP slope measured <em>before</em> theta-burst stimulation and a post-stimulation response measured <em>in the same slice</em>.</p>
+<p>We use behavioral tracking and neural activity recordings: <code>data/lecture4_behavior_regression.csv</code>.</p>
+<section id="exercise-1-pearson-vs.-spearman-correlation" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-1-pearson-vs.-spearman-correlation">Exercise 1: Pearson vs.&nbsp;Spearman Correlation</h3>
+<p>Pearson’s <span class="math inline">\(r\)</span> evaluates <em>linear</em> associations, whereas Spearman’s rank correlation <span class="math inline">\(\rho\)</span> assesses <em>monotonic</em> associations.</p>
 <div class="cell">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ltp_data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture3_synaptic_plasticity.csv"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ctrl_slices <span class="ot">&lt;-</span> <span class="fu">subset</span>(ltp_data, group <span class="sc">==</span> <span class="st">"Control"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ctrl_slices[, <span class="fu">c</span>(<span class="st">"slice_id"</span>, <span class="st">"baseline_fepsp"</span>, <span class="st">"post_fepsp"</span>)])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>  slice_id baseline_fepsp post_fepsp
-1   CTRL_1           97.0      135.2
-2   CTRL_2          101.7      142.9
-3   CTRL_3          102.3      158.1
-4   CTRL_4          100.4      149.9
-5   CTRL_5           96.5      142.5
-6   CTRL_6          107.9      144.8</code></pre>
-</div>
-</div>
-<section id="the-paired-design-advantage" class="level4">
-<h4 class="anchored" data-anchor-id="the-paired-design-advantage">The Paired Design Advantage:</h4>
-<p>Because baseline responses vary from slice to slice (biological variability), treating repeated measures as independent samples inflates the residual error variance and weakens statistical sensitivity.</p>
-<p>Let’s verify this mathematically by running both tests:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: COMPARE PAIRED VS UNPAIRED DESIGNS ---</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Independent two-sample test (INCORRECT DESIGN FOR THIS EXPERIMENT)</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>t_unpaired <span class="ot">&lt;-</span> <span class="fu">t.test</span>(ctrl_slices<span class="sc">$</span>post_fepsp, ctrl_slices<span class="sc">$</span>baseline_fepsp, <span class="at">paired =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Paired t-test (ACCOUNTING FOR WITHIN-SLICE REPEATED MEASURES)</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>t_paired   <span class="ot">&lt;-</span> <span class="fu">t.test</span>(ctrl_slices<span class="sc">$</span>post_fepsp, ctrl_slices<span class="sc">$</span>baseline_fepsp, <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Unpaired p-value:"</span>, <span class="fu">format.pval</span>(t_unpaired<span class="sc">$</span>p.value, <span class="at">digits =</span> <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Paired p-value:  "</span>, <span class="fu">format.pval</span>(t_paired<span class="sc">$</span>p.value, <span class="at">digits =</span> <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Observe how pairing eliminates slice-to-slice baseline shifts, yielding a much tighter test statistic and higher sensitivity.</p>
-<hr>
-</section>
-</section>
-<section id="exercise-2-the-students-vs.-welchs-t-test-trap" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-2-the-students-vs.-welchs-t-test-trap">Exercise 2: The Student’s vs.&nbsp;Welch’s <span class="math inline">\(t\)</span>-Test Trap</h3>
-<p>Student’s classic two-sample <span class="math inline">\(t\)</span>-test assumes equal population variances (<span class="math inline">\(\sigma_1^2 = \sigma_2^2\)</span>). In neurobiology, pharmacological or optogenetic perturbations frequently alter both the mean and the variance of neural responses.</p>
-<p>Compare the LTP magnitude (<code>post_fepsp</code>) between <code>Control</code> and <code>Drug_Washout</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- BROKEN CODE CHALLENGE ---</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The researcher runs a classical Student's t-test with var.equal = TRUE:</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>broken_test <span class="ot">&lt;-</span> <span class="fu">t.test</span>(post_fepsp <span class="sc">~</span> group, <span class="at">data =</span> ltp_data, <span class="at">var.equal =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(broken_test)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Check the variance difference:</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">tapply</span>(ltp_data<span class="sc">$</span>post_fepsp, ltp_data<span class="sc">$</span>group, var)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<section id="the-fix" class="level4">
-<h4 class="anchored" data-anchor-id="the-fix">The Fix:</h4>
-<p>When sample sizes or group variances differ, Student’s pooled variance estimate is biased. <strong>Welch’s <span class="math inline">\(t\)</span>-test</strong> adjusts the degrees of freedom using the Satterthwaite approximation and does not assume equal variances:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># FIX: Use Welch's t-test (default in R)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>welch_test <span class="ot">&lt;-</span> <span class="fu">t.test</span>(post_fepsp <span class="sc">~</span> group, <span class="at">data =</span> ltp_data, <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(welch_test)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<hr>
-</section>
-</section>
-<section id="exercise-3-non-parametric-alternatives-wilcoxon-mann-whitney" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-3-non-parametric-alternatives-wilcoxon-mann-whitney">Exercise 3: Non-Parametric Alternatives (Wilcoxon / Mann-Whitney)</h3>
-<p>Count data such as spontaneous miniature EPSC frequencies (<code>mepsc_freq_hz</code>) or action potential counts are strictly non-negative, discrete, and strongly right-skewed.</p>
-<div class="cell">
-<details open="" class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect skewness and normality</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>))</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(ltp_data<span class="sc">$</span>mepsc_freq_hz[ltp_data<span class="sc">$</span>group <span class="sc">==</span> <span class="st">"Control"</span>],</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">"steelblue"</span>, <span class="at">main =</span> <span class="st">"Control mEPSCs"</span>, <span class="at">xlab =</span> <span class="st">"Hz"</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(ltp_data<span class="sc">$</span>mepsc_freq_hz[ltp_data<span class="sc">$</span>group <span class="sc">==</span> <span class="st">"Drug_Washout"</span>],</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">"salmon"</span>, <span class="at">main =</span> <span class="st">"Drug mEPSCs"</span>, <span class="at">xlab =</span> <span class="st">"Hz"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture4_behavior_regression.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect relationship between Pupil Diameter and Sensory Firing Rate</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df<span class="sc">$</span>pupil_diam, df<span class="sc">$</span>firing_rate, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">"darkorange"</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"Normalized Pupil Diameter"</span>, <span class="at">ylab =</span> <span class="st">"Firing Rate (Hz)"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Arousal vs. Firing Rate (Yerkes-Dodson Curve)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Step3_hypothesis_testing_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Step4_regression_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Because Gaussian assumptions are violated, we apply the two-sample non-parametric Wilcoxon Rank-Sum test (Mann-Whitney <span class="math inline">\(U\)</span> test):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Non-parametric rank-based comparison</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>wilcox_result <span class="ot">&lt;-</span> <span class="fu">wilcox.test</span>(mepsc_freq_hz <span class="sc">~</span> group, <span class="at">data =</span> ltp_data, <span class="at">exact =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(wilcox_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Calculate Pearson’s and Spearman’s correlation coefficients:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Linear correlation</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>r_pearson  <span class="ot">&lt;-</span> <span class="fu">cor</span>(df<span class="sc">$</span>pupil_diam, df<span class="sc">$</span>firing_rate, <span class="at">method =</span> <span class="st">"pearson"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Rank correlation</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>rho_spear  <span class="ot">&lt;-</span> <span class="fu">cor</span>(df<span class="sc">$</span>pupil_diam, df<span class="sc">$</span>firing_rate, <span class="at">method =</span> <span class="st">"spearman"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Pearson's r:  "</span>, <span class="fu">round</span>(r_pearson, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Spearman's rho:"</span>, <span class="fu">round</span>(rho_spear, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Discussion:</strong> Both coefficients return values close to zero. Why? Neither metric detects non-monotonic non-linear curves (e.g., an inverted-U relationship).</p>
 <hr>
 </section>
-<section id="exercise-4-categorical-contingency-analysis-chi2-fishers-exact" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-4-categorical-contingency-analysis-chi2-fishers-exact">Exercise 4: Categorical Contingency Analysis (<span class="math inline">\(\chi^2\)</span> &amp; Fisher’s Exact)</h3>
-<p>We recorded whether slices achieved synaptic extinction learning (<code>1</code> = Success, <code>0</code> = Failure).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build 2x2 contingency table</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>tab <span class="ot">&lt;-</span> <span class="fu">table</span>(ltp_data<span class="sc">$</span>group, ltp_data<span class="sc">$</span>extinction_success)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(tab) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Failure"</span>, <span class="st">"Success"</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tab)</span>
+<section id="exercise-2-fitting-linear-models-and-residual-diagnostics" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-2-fitting-linear-models-and-residual-diagnostics">Exercise 2: Fitting Linear Models and Residual Diagnostics</h3>
+<p>Model hippocampal theta rhythm oscillation frequency as a function of running velocity:</p>
+<p><span class="math display">\[\text{theta\_hz}_i = \beta_0 + \beta_1 \cdot \text{speed\_cms}_i + \epsilon_i\]</span></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: FIT OLS REGRESSION ---</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>fit_theta <span class="ot">&lt;-</span> <span class="fu">lm</span>(theta_hz <span class="sc">~</span> speed_cms, <span class="at">data =</span> df)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_theta)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="diagnostic-plots-checking-ols-assumptions" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots-checking-ols-assumptions">Diagnostic Plots: Checking OLS Assumptions</h4>
+<p>Never report a linear model without inspecting residuals: 1. <strong>Residuals vs.&nbsp;Fitted:</strong> Assesses linearity and homoscedasticity (constant variance). 2. <strong>Normal Q-Q Plot:</strong> Checks normality of residuals. 3. <strong>Residuals vs.&nbsp;Leverage:</strong> Identifies influential observations via Cook’s distance lines.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit_theta)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Look at observation <strong>#12</strong>: * It sits at extreme leverage (<span class="math inline">\(X \approx 48\)</span>) with a large negative residual. * Cook’s distance exceeds typical thresholds (<span class="math inline">\(&gt; 0.5\)</span> or <span class="math inline">\(4/n\)</span>).</p>
+</section>
+<section id="the-fix-sensitivity-analysis" class="level4">
+<h4 class="anchored" data-anchor-id="the-fix-sensitivity-analysis">The Fix (Sensitivity Analysis):</h4>
+<p>Re-fit the model excluding the artifact point and compare slope estimates:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exclude observation 12</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>fit_clean <span class="ot">&lt;-</span> <span class="fu">lm</span>(theta_hz <span class="sc">~</span> speed_cms, <span class="at">data =</span> df[<span class="sc">-</span><span class="dv">12</span>, ])</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Slope WITH outlier:   "</span>, <span class="fu">round</span>(<span class="fu">coef</span>(fit_theta)[<span class="dv">2</span>], <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Slope WITHOUT outlier:"</span>, <span class="fu">round</span>(<span class="fu">coef</span>(fit_clean)[<span class="dv">2</span>], <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr">Exercise 3: Multiple Comparisons Correction (Bonferroni vs.&nbsp;FDR)</h3>
+<p>Our recording rig captured 100 simultaneous local field potential (LFP) channels (<code>lfp_ch_1</code> to <code>lfp_ch_100</code>). We want to discover which channels correlate significantly with behavioral performance (<code>behavior_score</code>).</p>
+<p>Run 100 uncorrected hypothesis tests:</p>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ch_cols <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"lfp_ch_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>p_values <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="dv">100</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>) {</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  test <span class="ot">&lt;-</span> <span class="fu">cor.test</span>(df[, ch_cols[i]], df<span class="sc">$</span>behavior_score)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  p_values[i] <span class="ot">&lt;-</span> test<span class="sc">$</span>p.value</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of uncorrected "discoveries" at alpha = 0.05</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(p_values <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 13</code></pre>
+</div>
+</div>
+<p>Without correction, approximately <span class="math inline">\(5\%\)</span> of truly noise channels return false positives by pure chance (<span class="math inline">\(100 \times 0.05 \approx 5\)</span>).</p>
+<p>Apply <strong>Bonferroni (FWER)</strong> and <strong>Benjamini-Hochberg (FDR)</strong> corrections:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: APPLY MULTIPLE </span><span class="al">TESTING</span><span class="co"> CORRECTIONS ---</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Family-Wise Error Rate (Bonferroni: alpha / m)</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>p_bonf <span class="ot">&lt;-</span> <span class="fu">p.adjust</span>(p_values, <span class="at">method =</span> <span class="st">"bonferroni"</span>)</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Chi-Square Test of Independence</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>chi_res <span class="ot">&lt;-</span> <span class="fu">chisq.test</span>(tab, <span class="at">correct =</span> <span class="cn">TRUE</span>) <span class="co"># Yates continuity correction</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(chi_res)</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># When cell counts are small (n &lt; 5 in any cell), use Fisher's Exact Test:</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>fisher_res <span class="ot">&lt;-</span> <span class="fu">fisher.test</span>(tab)</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(fisher_res)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. False Discovery Rate (Benjamini-Hochberg)</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>p_fdr  <span class="ot">&lt;-</span> <span class="fu">p.adjust</span>(p_values, <span class="at">method =</span> <span class="st">"BH"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Significant channels (Uncorrected):"</span>, <span class="fu">sum</span>(p_values <span class="sc">&lt;</span> <span class="fl">0.05</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Significant channels (Bonferroni):  "</span>, <span class="fu">sum</span>(p_bonf <span class="sc">&lt;</span> <span class="fl">0.05</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Significant channels (BH / FDR):    "</span>, <span class="fu">sum</span>(p_fdr <span class="sc">&lt;</span> <span class="fl">0.05</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Which exact channels passed FDR threshold?</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">which</span>(p_fdr <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
 <section id="step-3-peer-code-review-diagnostic-discussion-20-min" class="level2">
 <h2 class="anchored" data-anchor-id="step-3-peer-code-review-diagnostic-discussion-20-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (20 min)</h2>
-<p>With your lab partner, evaluate these three methodological diagnostic questions:</p>
+<p>Form pairs and compare outputs:</p>
 <ol type="1">
-<li><strong>Defaulting to Welch:</strong> Why is it good scientific practice to make Welch’s <span class="math inline">\(t\)</span>-test (<code>var.equal = FALSE</code>) your default choice over Student’s <span class="math inline">\(t\)</span>-test, even if variances look similar?</li>
-<li><strong>Effect Size vs.&nbsp;<span class="math inline">\(p\)</span>-value:</strong> If an experiment reports <span class="math inline">\(p = 0.0001\)</span> with <span class="math inline">\(n = 1000\)</span> per group, does that guarantee the biological effect is meaningful? Calculate Cohen’s <span class="math inline">\(d\)</span> using <code>lsr::cohensD()</code> or manual computation: <span class="math display">\[d = \frac{\bar{x}_1 - \bar{x}_2}{s_{\text{pooled}}}\]</span></li>
-<li><strong>Paired Permutation Intuition:</strong> How does a paired test fundamentally reduce to a single-sample test on differences: <span class="math inline">\(D_i = X_{\text{post}, i} - X_{\text{pre}, i}\)</span> tested against <span class="math inline">\(H_0: \mu_D = 0\)</span>?</li>
+<li><strong>Family-Wise Error Rate vs.&nbsp;False Discovery Rate:</strong><br>
+When would you recommend using Bonferroni over FDR in neuroscience? (e.g., confirmatory testing of 3 clinical candidate drugs vs.&nbsp;exploratory screening of 20,000 RNA-seq transcripts).</li>
+<li><strong>Transformations vs.&nbsp;Polynomials:</strong><br>
+Return to Exercise 1 (Pupil vs.&nbsp;Firing Rate). Fit a quadratic term using <code>lm(firing_rate ~ pupil_diam + I(pupil_diam^2), data = df)</code>. Inspect <code>summary()</code> and the residual plot. Does adding the second-order term resolve the non-linearity?</li>
 </ol>
 
 
