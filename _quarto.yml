@@ -14,6 +14,7 @@ website:
           - practicals/Step2_distributions.qmd
           - practicals/Step3_hypothesis_testing.qmd
           - practicals/Step4_regression.qmd
+          - practicals/Step5_mixed_effects.qmd
 
 format:
   html:

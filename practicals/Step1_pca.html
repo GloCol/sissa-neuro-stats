@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Lecture 4: Correlation, Linear Models &amp; Multiplicity – SISSA Practical Statistics in R</title>
+<title>Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA – SISSA Practical Statistics in R</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -185,6 +185,10 @@ window.Quarto = {
     <a class="dropdown-item" href="../practicals/Step4_regression.html">
  <span class="dropdown-text">Lecture 4: Correlation, Linear Models &amp; Multiplicity</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../practicals/Step5_mixed_effects.html">
+ <span class="dropdown-text">Lecture 5: Hierarchical Models, Pseudo-Replication &amp; Capstone</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
@@ -205,15 +209,16 @@ window.Quarto = {
   <ul>
   <li><a href="#step-1-intuition-playground-30-min" id="toc-step-1-intuition-playground-30-min" class="nav-link active" data-scroll-target="#step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</a>
   <ul class="collapse">
-  <li><a href="#leverage-residuals-influential-observations" id="toc-leverage-residuals-influential-observations" class="nav-link" data-scroll-target="#leverage-residuals-influential-observations">Leverage, Residuals &amp; Influential Observations</a></li>
+  <li><a href="#the-geometry-of-dimensionality-reduction" id="toc-the-geometry-of-dimensionality-reduction" class="nav-link" data-scroll-target="#the-geometry-of-dimensionality-reduction">The Geometry of Dimensionality Reduction</a></li>
   </ul></li>
-  <li><a href="#step-2-code-along-fix-it-lab-85-min" id="toc-step-2-code-along-fix-it-lab-85-min" class="nav-link" data-scroll-target="#step-2-code-along-fix-it-lab-85-min">Step 2: “Code-Along &amp; Fix-It” Lab (85 min)</a>
+  <li><a href="#step-2-code-along-fix-it-lab-80-min" id="toc-step-2-code-along-fix-it-lab-80-min" class="nav-link" data-scroll-target="#step-2-code-along-fix-it-lab-80-min">Step 2: “Code-Along &amp; Fix-It” Lab (80 min)</a>
   <ul class="collapse">
-  <li><a href="#exercise-1-pearson-vs.-spearman-correlation" id="toc-exercise-1-pearson-vs.-spearman-correlation" class="nav-link" data-scroll-target="#exercise-1-pearson-vs.-spearman-correlation">Exercise 1: Pearson vs.&nbsp;Spearman Correlation</a></li>
-  <li><a href="#exercise-2-fitting-linear-models-and-residual-diagnostics" id="toc-exercise-2-fitting-linear-models-and-residual-diagnostics" class="nav-link" data-scroll-target="#exercise-2-fitting-linear-models-and-residual-diagnostics">Exercise 2: Fitting Linear Models and Residual Diagnostics</a></li>
-  <li><a href="#exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr" id="toc-exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr" class="nav-link" data-scroll-target="#exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr">Exercise 3: Multiple Comparisons Correction (Bonferroni vs.&nbsp;FDR)</a></li>
+  <li><a href="#exercise-1-loading-data-and-summary-statistics" id="toc-exercise-1-loading-data-and-summary-statistics" class="nav-link" data-scroll-target="#exercise-1-loading-data-and-summary-statistics">Exercise 1: Loading Data and Summary Statistics</a></li>
+  <li><a href="#exercise-2-manual-covariance-matrix-construction" id="toc-exercise-2-manual-covariance-matrix-construction" class="nav-link" data-scroll-target="#exercise-2-manual-covariance-matrix-construction">Exercise 2: Manual Covariance Matrix Construction</a></li>
+  <li><a href="#exercise-3-the-scaling-trap-in-pca" id="toc-exercise-3-the-scaling-trap-in-pca" class="nav-link" data-scroll-target="#exercise-3-the-scaling-trap-in-pca">Exercise 3: The Scaling Trap in PCA</a></li>
+  <li><a href="#exercise-4-visualizing-behavioral-trials-in-latent-space" id="toc-exercise-4-visualizing-behavioral-trials-in-latent-space" class="nav-link" data-scroll-target="#exercise-4-visualizing-behavioral-trials-in-latent-space">Exercise 4: Visualizing Behavioral Trials in Latent Space</a></li>
   </ul></li>
-  <li><a href="#step-3-peer-code-review-diagnostic-discussion-20-min" id="toc-step-3-peer-code-review-diagnostic-discussion-20-min" class="nav-link" data-scroll-target="#step-3-peer-code-review-diagnostic-discussion-20-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (20 min)</a></li>
+  <li><a href="#step-3-peer-code-review-diagnostic-discussion-25-min" id="toc-step-3-peer-code-review-diagnostic-discussion-25-min" class="nav-link" data-scroll-target="#step-3-peer-code-review-diagnostic-discussion-25-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (25 min)</a></li>
   </ul>
 </nav>
     </div>
@@ -222,7 +227,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lecture 4: Correlation, Linear Models &amp; Multiplicity</h1>
+<h1 class="title">Lecture 1: Exploratory Data Analysis, Covariance &amp; PCA</h1>
 <p class="subtitle lead">SISSA PhD in Neuroscience - Practical Lab</p>
 </div>
 
@@ -242,81 +247,60 @@ window.Quarto = {
 
 <section id="step-1-intuition-playground-30-min" class="level2">
 <h2 class="anchored" data-anchor-id="step-1-intuition-playground-30-min">Step 1: Intuition Playground (30 min)</h2>
-<section id="leverage-residuals-influential-observations" class="level3">
-<h3 class="anchored" data-anchor-id="leverage-residuals-influential-observations">Leverage, Residuals &amp; Influential Observations</h3>
-<p>In Ordinary Least Squares (OLS) regression: <span class="math display">\[\hat{Y} = \beta_0 + \beta_1 X + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2)\]</span></p>
-<p>Because the regression line minimizes the sum of squared errors <span class="math inline">\(\sum e_i^2\)</span>, points located far along the predictor axis (<span class="math inline">\(X\)</span>) exert high <strong>leverage</strong>. If their response (<span class="math inline">\(Y\)</span>) deviates from the regression trend, they tilt the line disproportionately.</p>
-<p>Use the interactive simulator below: 1. Drag the <strong>Outlier Position (<span class="math inline">\(X\)</span>)</strong> slider from the center (<span class="math inline">\(X = 0\)</span>) to the extreme periphery (<span class="math inline">\(X = 5\)</span>). 2. Adjust the <strong>Outlier Vertical Shift (<span class="math inline">\(Y\)</span>)</strong> to introduce a large discrepancy. 3. Observe how Cook’s distance and the estimated slope <span class="math inline">\(\hat{\beta}_1\)</span> change when an outlier moves from low leverage to high leverage.</p>
+<section id="the-geometry-of-dimensionality-reduction" class="level3">
+<h3 class="anchored" data-anchor-id="the-geometry-of-dimensionality-reduction">The Geometry of Dimensionality Reduction</h3>
+<p>In the theoretical lecture, we discussed how covariance measures shared variance between variables and how PCA finds orthogonal axes that maximize projected variance[cite: 73, 75].</p>
+<p>Interact with the sandbox below: 1. Adjust the <strong>Projection Vector Angle</strong> <span class="math inline">\(\theta\)</span>. 2. Observe the right panel: how does the variance of the projected data points change? 3. Locate the angle that maximizes the projected variance (this corresponds to the first eigenvector, or <strong>PC1</strong>)[cite: 75].</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
 #| standalone: true
-#| viewerHeight: 580
+#| viewerHeight: 520
 
 library(shiny)
 
 ui &lt;- fluidPage(
-  titlePanel("Leverage &amp; Cook's Distance in Regression"),
+  titlePanel("Maximizing Projected Variance"),
   sidebarLayout(
     sidebarPanel(
-      sliderInput("outlier_x", "Outlier Position (Predictor X):", min = -4, max = 5, value = 4.2, step = 0.2),
-      sliderInput("outlier_y", "Outlier Value (Response Y):", min = -10, max = 15, value = -6, step = 0.5),
-      helpText("The blue dashed line is the true underlying relationship (slope = 1.2). The red solid line is the fitted OLS model including the outlier.")
+      sliderInput("theta", "Projection Vector Angle (°):", min = 0, max = 180, value = 20, step = 2),
+      helpText("The red line shows the chosen unit vector. The histogram displays the distribution of data points projected onto this line.")
     ),
     mainPanel(
-      plotOutput("regPlot", height = "440px"),
-      verbatimTextOutput("regStats")
+      plotOutput("pcaPlot", height = "400px")
     )
   )
 )
 
 server &lt;- function(input, output) {
-  sim_pts &lt;- reactive({
-    set.seed(42)
-    x &lt;- rnorm(35, mean = 0, sd = 1.2)
-    y &lt;- 1.2 * x + rnorm(35, sd = 0.9)
-    
-    # Append the interactive outlier
-    x_all &lt;- c(x, input$outlier_x)
-    y_all &lt;- c(y, input$outlier_y)
-    
-    mod &lt;- lm(y_all ~ x_all)
-    cooks &lt;- cooks.distance(mod)
-    
-    list(x = x_all, y = y_all, mod = mod, cooks = cooks)
-  })
+  set.seed(123)
+  x_raw &lt;- rnorm(70, mean = 0, sd = 1.8)
+  y_raw &lt;- 0.7 * x_raw + rnorm(70, mean = 0, sd = 0.7)
+  X &lt;- cbind(x_raw - mean(x_raw), y_raw - mean(y_raw))
 
-  output$regPlot &lt;- renderPlot({
-    res &lt;- sim_pts()
-    outlier_idx &lt;- length(res$x)
-    is_high_cook &lt;- res$cooks[outlier_idx] &gt; 0.5
-    
-    par(mar = c(4.5, 4.5, 3, 1))
-    plot(res$x[-outlier_idx], res$y[-outlier_idx], pch = 19, col = "steelblue",
-         xlim = c(-5, 6), ylim = c(-12, 16),
-         xlab = "Predictor (X)", ylab = "Response (Y)",
-         main = "Impact of a Single Point on Ordinary Least Squares")
-    
-    # Highlight the outlier
-    points(res$x[outlier_idx], res$y[outlier_idx], pch = 21, bg = "red", cex = 1.8, lwd = 2)
-    text(res$x[outlier_idx], res$y[outlier_idx] + 1.2, labels = "Outlier", col = "red", font = 2)
-    
-    # Ground truth vs Fitted line
-    abline(a = 0, b = 1.2, col = "blue", lty = 2, lwd = 2)
-    abline(res$mod, col = "firebrick", lwd = 2.5)
-    
-    legend("topleft", legend = c("True Model (slope = 1.2)", "Fitted OLS Model", "Data Points"),
-           col = c("blue", "firebrick", "steelblue"), lty = c(2, 1, NA), pch = c(NA, NA, 19), lwd = 2, bty = "n")
-  })
-  
-  output$regStats &lt;- renderPrint({
-    res &lt;- sim_pts()
-    outlier_idx &lt;- length(res$x)
-    cat("Fitted Slope (Beta 1):", round(coef(res$mod)[2], 3), "(Ground Truth = 1.200)\n")
-    cat("Outlier Cook's Distance:", round(res$cooks[outlier_idx], 3), "\n")
-    if (res$cooks[outlier_idx] &gt; 0.5) {
-      cat("WARNING: Point qualifies as highly influential (Cook's D &gt; 0.5)!\n")
-    }
+  output$pcaPlot &lt;- renderPlot({
+    rad &lt;- input$theta * pi / 180
+    u &lt;- c(cos(rad), sin(rad))
+    projections &lt;- as.vector(X %*% u)
+    var_proj &lt;- var(projections)
+
+    par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
+
+    # Scatter plot with projection line
+    plot(X[, 1], X[, 2], pch = 19, col = rgb(0.1, 0.4, 0.8, 0.7),
+         xlim = c(-5, 5), ylim = c(-5, 5), asp = 1,
+         xlab = "Neuron 1 (centered)", ylab = "Neuron 2 (centered)",
+         main = "Original Data Space")
+    abline(0, tan(rad), col = "firebrick", lwd = 2.5)
+    arrows(0, 0, 3 * cos(rad), 3 * sin(rad), col = "firebrick", lwd = 3, length = 0.1)
+    grid()
+
+    # Histogram of projections
+    hist(projections, breaks = seq(-6, 6, by = 0.8), col = "darkorange", border = "white",
+         xlim = c(-6, 6), ylim = c(0, 35),
+         xlab = "Projected Coordinates",
+         main = paste("Projected Variance:", round(var_proj, 3)))
+    abline(v = mean(projections), col = "black", lty = 2, lwd = 2)
   })
 }
 
@@ -324,116 +308,182 @@ shinyApp(ui, server)</code></pre>
 <hr>
 </section>
 </section>
-<section id="step-2-code-along-fix-it-lab-85-min" class="level2">
-<h2 class="anchored" data-anchor-id="step-2-code-along-fix-it-lab-85-min">Step 2: “Code-Along &amp; Fix-It” Lab (85 min)</h2>
-<p>We use behavioral tracking and neural activity recordings: <code>data/lecture4_behavior_regression.csv</code>.</p>
-<section id="exercise-1-pearson-vs.-spearman-correlation" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-1-pearson-vs.-spearman-correlation">Exercise 1: Pearson vs.&nbsp;Spearman Correlation</h3>
-<p>Pearson’s <span class="math inline">\(r\)</span> evaluates <em>linear</em> associations, whereas Spearman’s rank correlation <span class="math inline">\(\rho\)</span> assesses <em>monotonic</em> associations.</p>
+<section id="step-2-code-along-fix-it-lab-80-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-code-along-fix-it-lab-80-min">Step 2: “Code-Along &amp; Fix-It” Lab (80 min)</h2>
+<p>We will analyze multi-neuron 2-photon calcium imaging recordings: <code>data/lecture1_calcium.csv</code>.</p>
+<section id="exercise-1-loading-data-and-summary-statistics" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-1-loading-data-and-summary-statistics">Exercise 1: Loading Data and Summary Statistics</h3>
+<p>Load the dataset and inspect the measures of central tendency and dispersion introduced in lecture: mean, median, variance, and quantiles[cite: 51, 53, 58, 70].</p>
 <div class="cell">
 <details open="" class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture4_behavior_regression.csv"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect relationship between Pupil Diameter and Sensory Firing Rate</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df<span class="sc">$</span>pupil_diam, df<span class="sc">$</span>firing_rate, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">"darkorange"</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"Normalized Pupil Diameter"</span>, <span class="at">ylab =</span> <span class="st">"Firing Rate (Hz)"</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Arousal vs. Firing Rate (Yerkes-Dodson Curve)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="Step4_regression_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Calculate Pearson’s and Spearman’s correlation coefficients:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Linear correlation</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>r_pearson  <span class="ot">&lt;-</span> <span class="fu">cor</span>(df<span class="sc">$</span>pupil_diam, df<span class="sc">$</span>firing_rate, <span class="at">method =</span> <span class="st">"pearson"</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Rank correlation</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>rho_spear  <span class="ot">&lt;-</span> <span class="fu">cor</span>(df<span class="sc">$</span>pupil_diam, df<span class="sc">$</span>firing_rate, <span class="at">method =</span> <span class="st">"spearman"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Pearson's r:  "</span>, <span class="fu">round</span>(r_pearson, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Spearman's rho:"</span>, <span class="fu">round</span>(rho_spear, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>Discussion:</strong> Both coefficients return values close to zero. Why? Neither metric detects non-monotonic non-linear curves (e.g., an inverted-U relationship).</p>
-<hr>
-</section>
-<section id="exercise-2-fitting-linear-models-and-residual-diagnostics" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-2-fitting-linear-models-and-residual-diagnostics">Exercise 2: Fitting Linear Models and Residual Diagnostics</h3>
-<p>Model hippocampal theta rhythm oscillation frequency as a function of running velocity:</p>
-<p><span class="math display">\[\text{theta\_hz}_i = \beta_0 + \beta_1 \cdot \text{speed\_cms}_i + \epsilon_i\]</span></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: FIT OLS REGRESSION ---</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>fit_theta <span class="ot">&lt;-</span> <span class="fu">lm</span>(theta_hz <span class="sc">~</span> speed_cms, <span class="at">data =</span> df)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_theta)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<section id="diagnostic-plots-checking-ols-assumptions" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots-checking-ols-assumptions">Diagnostic Plots: Checking OLS Assumptions</h4>
-<p>Never report a linear model without inspecting residuals: 1. <strong>Residuals vs.&nbsp;Fitted:</strong> Assesses linearity and homoscedasticity (constant variance). 2. <strong>Normal Q-Q Plot:</strong> Checks normality of residuals. 3. <strong>Residuals vs.&nbsp;Leverage:</strong> Identifies influential observations via Cook’s distance lines.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit_theta)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Look at observation <strong>#12</strong>: * It sits at extreme leverage (<span class="math inline">\(X \approx 48\)</span>) with a large negative residual. * Cook’s distance exceeds typical thresholds (<span class="math inline">\(&gt; 0.5\)</span> or <span class="math inline">\(4/n\)</span>).</p>
-</section>
-<section id="the-fix-sensitivity-analysis" class="level4">
-<h4 class="anchored" data-anchor-id="the-fix-sensitivity-analysis">The Fix (Sensitivity Analysis):</h4>
-<p>Re-fit the model excluding the artifact point and compare slope estimates:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exclude observation 12</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>fit_clean <span class="ot">&lt;-</span> <span class="fu">lm</span>(theta_hz <span class="sc">~</span> speed_cms, <span class="at">data =</span> df[<span class="sc">-</span><span class="dv">12</span>, ])</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Slope WITH outlier:   "</span>, <span class="fu">round</span>(<span class="fu">coef</span>(fit_theta)[<span class="dv">2</span>], <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Slope WITHOUT outlier:"</span>, <span class="fu">round</span>(<span class="fu">coef</span>(fit_clean)[<span class="dv">2</span>], <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<hr>
-</section>
-</section>
-<section id="exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr" class="level3">
-<h3 class="anchored" data-anchor-id="exercise-3-multiple-comparisons-correction-bonferroni-vs.-fdr">Exercise 3: Multiple Comparisons Correction (Bonferroni vs.&nbsp;FDR)</h3>
-<p>Our recording rig captured 100 simultaneous local field potential (LFP) channels (<code>lfp_ch_1</code> to <code>lfp_ch_100</code>). We want to discover which channels correlate significantly with behavioral performance (<code>behavior_score</code>).</p>
-<p>Run 100 uncorrected hypothesis tests:</p>
-<div class="cell">
-<details open="" class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ch_cols <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"lfp_ch_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>p_values <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="dv">100</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>) {</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  test <span class="ot">&lt;-</span> <span class="fu">cor.test</span>(df[, ch_cols[i]], df<span class="sc">$</span>behavior_score)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  p_values[i] <span class="ot">&lt;-</span> test<span class="sc">$</span>p.value</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of uncorrected "discoveries" at alpha = 0.05</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(p_values <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Load the data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calcium <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/lecture1_calcium.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(calcium)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 13</code></pre>
+<pre><code>  trial_id condition  roi_1  roi_2 roi_3 roi_4 roi_5 roi_6  roi_7  roi_8
+1        1  Stimulus 10.145  7.278 4.444 4.227 4.471 3.791 0.0415 501.74
+2        2  Stimulus  7.822  6.033 3.076 3.124 6.198 5.320 0.0391 355.52
+3        3  Stimulus  8.936  7.225 5.499 4.553 6.458 3.878 0.0452 456.40
+4        4  Stimulus  9.259  8.204 4.459 4.442 6.449 5.270 0.0466 411.40
+5        5  Stimulus  8.985 28.400 5.389 3.581 3.819 3.507 0.0485 507.74
+6        6  Stimulus  8.373  7.452 4.553 1.996 7.250 3.684 0.0476 453.45</code></pre>
+</div>
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Compare mean and median on a noisy ROI (roi_2)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mean_roi2 <span class="ot">&lt;-</span> <span class="fu">mean</span>(calcium<span class="sc">$</span>roi_2)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>median_roi2 <span class="ot">&lt;-</span> <span class="fu">median</span>(calcium<span class="sc">$</span>roi_2)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean ROI 2:   "</span>, <span class="fu">round</span>(mean_roi2, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mean ROI 2:    4.9 </code></pre>
+</div>
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median ROI 2: "</span>, <span class="fu">round</span>(median_roi2, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Median ROI 2:  4.232 </code></pre>
 </div>
 </div>
-<p>Without correction, approximately <span class="math inline">\(5\%\)</span> of truly noise channels return false positives by pure chance (<span class="math inline">\(100 \times 0.05 \approx 5\)</span>).</p>
-<p>Apply <strong>Bonferroni (FWER)</strong> and <strong>Benjamini-Hochberg (FDR)</strong> corrections:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: APPLY MULTIPLE </span><span class="al">TESTING</span><span class="co"> CORRECTIONS ---</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Family-Wise Error Rate (Bonferroni: alpha / m)</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>p_bonf <span class="ot">&lt;-</span> <span class="fu">p.adjust</span>(p_values, <span class="at">method =</span> <span class="st">"bonferroni"</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. False Discovery Rate (Benjamini-Hochberg)</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>p_fdr  <span class="ot">&lt;-</span> <span class="fu">p.adjust</span>(p_values, <span class="at">method =</span> <span class="st">"BH"</span>)</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Significant channels (Uncorrected):"</span>, <span class="fu">sum</span>(p_values <span class="sc">&lt;</span> <span class="fl">0.05</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Significant channels (Bonferroni):  "</span>, <span class="fu">sum</span>(p_bonf <span class="sc">&lt;</span> <span class="fl">0.05</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Significant channels (BH / FDR):    "</span>, <span class="fu">sum</span>(p_fdr <span class="sc">&lt;</span> <span class="fl">0.05</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Which exact channels passed FDR threshold?</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">which</span>(p_fdr <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="trap-1-outliers-and-systematic-vs.-unsystematic-error" class="level4">
+<h4 class="anchored" data-anchor-id="trap-1-outliers-and-systematic-vs.-unsystematic-error">Trap 1: Outliers and Systematic vs.&nbsp;Unsystematic Error</h4>
+<p>Notice the discrepancy between mean and median in <code>roi_2</code>[cite: 51, 53]. Isolated artifacts (such as preparation movement) distort the sample mean while leaving the median stable[cite: 51, 53, 64].</p>
+<p>Identify outliers using the boxplot whisker rule from lecture[cite: 64]: <span class="math display">\[W_l = Q_1 - 1.5 \cdot \text{IQR}, \quad W_u = Q_3 + 1.5 \cdot \text{IQR}\]</span></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: COMPLETE THE CODE ---</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Q1, Q3, and IQR for calcium$roi_2</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>q1 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(calcium<span class="sc">$</span>roi_2, <span class="fl">0.25</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>q3 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(calcium<span class="sc">$</span>roi_2, <span class="fl">0.75</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>iqr_val <span class="ot">&lt;-</span> q3 <span class="sc">-</span> q1</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Define upper threshold</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>upper_limit <span class="ot">&lt;-</span> q3 <span class="sc">+</span> <span class="fl">1.5</span> <span class="sc">*</span> iqr_val</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract trials that exceed this threshold:</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># FIX ME: complete indexing</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>outliers <span class="ot">&lt;-</span> calcium[calcium<span class="sc">$</span>roi_2 <span class="sc">&gt;</span> upper_limit, <span class="fu">c</span>(<span class="st">"trial_id"</span>, <span class="st">"condition"</span>, <span class="st">"roi_2"</span>)]</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(outliers)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
-<section id="step-3-peer-code-review-diagnostic-discussion-20-min" class="level2">
-<h2 class="anchored" data-anchor-id="step-3-peer-code-review-diagnostic-discussion-20-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (20 min)</h2>
+<section id="exercise-2-manual-covariance-matrix-construction" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-2-manual-covariance-matrix-construction">Exercise 2: Manual Covariance Matrix Construction</h3>
+<p>The sample covariance between variables <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> is defined as[cite: 73]: <span class="math display">\[s_{x,y} = \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})\]</span></p>
+<p>For a column-centered matrix <span class="math inline">\(X_c\)</span> (<span class="math inline">\(n \times p\)</span>), the covariance matrix is given by[cite: 74]: <span class="math display">\[C = \frac{1}{n-1} X_c^T X_c\]</span></p>
+<p>Verify this matrix identity in R:</p>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Subset neurons roi_1 through roi_6</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>rois <span class="ot">&lt;-</span> calcium[, <span class="fu">paste0</span>(<span class="st">"roi_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>)]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(rois)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Center columns by subtracting each sample mean</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>X_c <span class="ot">&lt;-</span> <span class="fu">scale</span>(rois, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute covariance via matrix multiplication (%*%)</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>cov_manual <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">/</span> (n <span class="sc">-</span> <span class="dv">1</span>)) <span class="sc">*</span> (<span class="fu">t</span>(X_c) <span class="sc">%*%</span> X_c)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with base R cov()</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>cov_r <span class="ot">&lt;-</span> <span class="fu">cov</span>(rois)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Confirm maximum discrepancy is negligible</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(cov_manual <span class="sc">-</span> cov_r))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7.105427e-15</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="exercise-3-the-scaling-trap-in-pca" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-3-the-scaling-trap-in-pca">Exercise 3: The Scaling Trap in PCA</h3>
+<p>Run Principal Component Analysis using <code>prcomp()</code>.<br>
+In our dataset: * <code>roi_7</code> has very low amplitude values (<span class="math inline">\(\mu \approx 0.05\)</span>). * <code>roi_8</code> has a large amplifier baseline offset (<span class="math inline">\(\mu \approx 450, \sigma \approx 65\)</span>).</p>
+<section id="the-broken-code" class="level4">
+<h4 class="anchored" data-anchor-id="the-broken-code">The Broken Code:</h4>
+<p>Observe what happens when PCA is run without unit-variance scaling (<code>scale. = FALSE</code>):</p>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Include all 8 recording channels</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>rois_all <span class="ot">&lt;-</span> calcium[, <span class="fu">paste0</span>(<span class="st">"roi_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>)]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">BUG</span><span class="co">: scaling disabled</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>pca_unscaled <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(rois_all, <span class="at">scale. =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Check variance explained</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_unscaled)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                           PC1     PC2     PC3     PC4     PC5     PC6     PC7
+Standard deviation     68.4163 5.85467 3.24021 1.62862 1.39322 0.95499 0.74407
+Proportion of Variance  0.9893 0.00724 0.00222 0.00056 0.00041 0.00019 0.00012
+Cumulative Proportion   0.9893 0.99650 0.99872 0.99928 0.99969 0.99988 1.00000
+                            PC8
+Standard deviation     0.009039
+Proportion of Variance 0.000000
+Cumulative Proportion  1.000000</code></pre>
+</div>
+</div>
+<p><strong>PC1 accounts for &gt;99.8% of the total variance.</strong></p>
+<p>Inspect the loadings (eigenvector weights) for PC1:</p>
+<div class="cell">
+<details open="" class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pca_unscaled<span class="sc">$</span>rotation[, <span class="dv">1</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>        roi_1         roi_2         roi_3         roi_4         roi_5 
+-2.749068e-03 -1.934686e-02  2.290681e-03  1.787522e-04  7.540696e-04 
+        roi_6         roi_7         roi_8 
+-1.861331e-03 -2.169932e-05 -9.998044e-01 </code></pre>
+</div>
+</div>
+<p><code>roi_8</code> dominates the entire analysis due strictly to its unit scale, masking the biological dynamics of the remaining neurons[cite: 75].</p>
+</section>
+<section id="the-fix" class="level4">
+<h4 class="anchored" data-anchor-id="the-fix">The Fix:</h4>
+<p>Correct the command by setting <code>scale. = TRUE</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># --- </span><span class="al">TASK</span><span class="co">: COMPLETE THE CODE ---</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-run PCA with each channel standardized to unit variance:</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>pca_scaled <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(rois_all, <span class="at">scale. =</span> <span class="cn">TRUE</span>) <span class="co"># FIX HERE</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_scaled)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="exercise-4-visualizing-behavioral-trials-in-latent-space" class="level3">
+<h3 class="anchored" data-anchor-id="exercise-4-visualizing-behavioral-trials-in-latent-space">Exercise 4: Visualizing Behavioral Trials in Latent Space</h3>
+<p>Plot the trials in the reduced coordinate system (<strong>PC1 vs.&nbsp;PC2</strong>) to evaluate whether population activity separates <code>Stimulus</code> and <code>Spontaneous</code> conditions without prior labels[cite: 75].</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract coordinates (scores) along PC1 and PC2</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>scores_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(pca_scaled<span class="sc">$</span>x)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>scores_df<span class="sc">$</span>condition <span class="ot">&lt;-</span> calcium<span class="sc">$</span>condition</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot of low-dimensional projections</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(scores_df<span class="sc">$</span>PC1, scores_df<span class="sc">$</span>PC2,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">ifelse</span>(scores_df<span class="sc">$</span>condition <span class="sc">==</span> <span class="st">"Stimulus"</span>, <span class="st">"firebrick"</span>, <span class="st">"steelblue"</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">cex =</span> <span class="fl">1.3</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"PC1"</span>, <span class="at">ylab =</span> <span class="st">"PC2"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Trial Projections in PCA Space"</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topright"</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Stimulus"</span>, <span class="st">"Spontaneous"</span>),</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"firebrick"</span>, <span class="st">"steelblue"</span>), <span class="at">pch =</span> <span class="dv">19</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="fu">grid</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="step-3-peer-code-review-diagnostic-discussion-25-min" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-peer-code-review-diagnostic-discussion-25-min">Step 3: Peer Code Review &amp; Diagnostic Discussion (25 min)</h2>
 <p>Form pairs and compare outputs:</p>
 <ol type="1">
-<li><strong>Family-Wise Error Rate vs.&nbsp;False Discovery Rate:</strong><br>
-When would you recommend using Bonferroni over FDR in neuroscience? (e.g., confirmatory testing of 3 clinical candidate drugs vs.&nbsp;exploratory screening of 20,000 RNA-seq transcripts).</li>
-<li><strong>Transformations vs.&nbsp;Polynomials:</strong><br>
-Return to Exercise 1 (Pupil vs.&nbsp;Firing Rate). Fit a quadratic term using <code>lm(firing_rate ~ pupil_diam + I(pupil_diam^2), data = df)</code>. Inspect <code>summary()</code> and the residual plot. Does adding the second-order term resolve the non-linearity?</li>
+<li><strong>Biological Interpretation of Loadings:</strong><br>
+Run <code>pca_scaled$rotation[, 1:2]</code>. Which neurons contribute most to PC1? Do the neurons separating <em>Stimulus</em> from <em>Spontaneous</em> correspond to the sensory-responsive units?</li>
+<li><strong>Variance vs.&nbsp;Causality:</strong><br>
+Review the caveat from lecture: PCA maximizes variance, not correlation with experimental conditions[cite: 75]. If an artifact (e.g., optical drift or animal motion) introduces large variance, PCA will isolate the artifact as PC1[cite: 75].</li>
 </ol>
 
 

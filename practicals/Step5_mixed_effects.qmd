@@ -1,0 +1,224 @@
+---
+title: "Lecture 5: Hierarchical Models, Pseudo-Replication & Capstone"
+subtitle: "SISSA PhD in Neuroscience - Practical Lab"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+filters:
+  - shinylive
+---
+
+## Step 1: Intuition Playground (30 min)
+
+### The Pseudo-Replication Simulator
+Neuroscience experiments rarely sample independent units from an infinite pool. When you record 50 cells across 3 mice, your effective sample size is closer to $N = 3$ than $N = 150$.
+
+Treating clustered observations as completely independent artificially deflates the Standard Error of the Mean ($SE = s / \sqrt{N}$), which inflates test statistics and creates false-positive rates as high as 40–60% at nominal $\alpha = 0.05$.
+
+Use the simulator below to compare:
+1. **Pooled Model:** Treats every segment/cell as independent.
+2. **Aggregated (Animal-Averaged) Model:** Computes the mean per mouse first, then runs a test with $N_{\text{animals}}$.
+3. **Linear Mixed-Effects Model (LMM):** Models individual segments while adjusting for grouping via random intercepts.
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 580
+
+library(shiny)
+
+ui <- fluidPage(
+  titlePanel("The Cost of Ignoring Hierarchical Structure"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("n_animals", "Mice per Condition:", min = 3, max = 15, value = 4, step = 1),
+      sliderInput("cells_per_animal", "Cells sampled per Mouse:", min = 5, max = 30, value = 15, step = 5),
+      sliderInput("mouse_sd", "Between-Mouse Variability (SD):", min = 0.2, max = 3.0, value = 1.8, step = 0.2),
+      actionButton("resim", "Resimulate Experiment", class = "btn-primary"),
+      helpText("True treatment effect is zero (H0 is true). Any detection is a Type I error (false positive).")
+    ),
+    mainPanel(
+      plotOutput("nestedPlot", height = "440px"),
+      verbatimTextOutput("simStats")
+    )
+  )
+)
+
+server <- function(input, output) {
+  sim_nested <- reactive({
+    input$resim
+    n_a <- input$n_animals
+    n_c <- input$cells_per_animal
+    sd_m <- input$mouse_sd
+    
+    # Simulate null model (treatment effect = 0)
+    ctrl_mouse_means <- rnorm(n_a, mean = 20, sd = sd_m)
+    treat_mouse_means <- rnorm(n_a, mean = 20, sd = sd_m)
+    
+    ctrl_cells <- unlist(lapply(ctrl_mouse_means, function(m) rnorm(n_c, mean = m, sd = 0.8)))
+    treat_cells <- unlist(lapply(treat_mouse_means, function(m) rnorm(n_c, mean = m, sd = 0.8)))
+    
+    df <- data.frame(
+      value = c(ctrl_cells, treat_cells),
+      group = rep(c("Control", "Treated"), each = n_a * n_c),
+      mouse = factor(rep(c(paste0("C_M", 1:n_a), paste0("T_M", 1:n_a)), each = n_c))
+    )
+    
+    # 1. Naive pooled t-test
+    p_naive <- t.test(value ~ group, data = df)$p.value
+    
+    # 2. Aggregated animal-level t-test
+    agg_df <- aggregate(value ~ group + mouse, data = df, mean)
+    p_agg <- t.test(value ~ group, data = agg_df)$p.value
+    
+    list(df = df, agg = agg_df, p_naive = p_naive, p_agg = p_agg, n_total = nrow(df), n_mice = n_a * 2)
+  })
+
+  output$nestedPlot <- renderPlot({
+    res <- sim_nested()
+    df <- res$df
+    
+    par(mar = c(4.5, 4.5, 3, 1))
+    # Stripchart showing nested dots by mouse
+    plot(as.numeric(df$mouse), df$value, pch = 16, col = rgb(0.2, 0.4, 0.8, 0.4),
+         xlab = "Mouse ID", ylab = "Measured Cell Value",
+         main = "Nested Sampling: Individual Cells Grouped by Mouse",
+         xaxt = "n")
+    axis(1, at = 1:res$n_mice, labels = levels(df$mouse), las = 2, cex.axis = 0.8)
+    
+    # Plot mouse-level means
+    points(1:res$n_mice, res$agg$value, pch = 18, col = "firebrick", cex = 2)
+    abline(v = res$n_mice / 2 + 0.5, lty = 2, col = "grey50")
+    legend("topright", legend = c("Individual Cells", "Animal Mean"),
+           col = c("steelblue", "firebrick"), pch = c(16, 18), bty = "n")
+  })
+  
+  output$simStats <- renderPrint({
+    res <- sim_nested()
+    cat("Total Cells Quantified (N_cells):", res$n_total, "\n")
+    cat("Total Mice Used (N_animals):    ", res$n_mice, "\n\n")
+    cat("Naive Pooled t-test p-value (ignores clustering):", format.pval(res$p_naive, digits = 4), "\n")
+    cat("Summary: ", ifelse(res$p_naive < 0.05, "FALSE POSITIVE CLAIMED!", "Correctly retained H0"), "\n\n")
+    cat("Animal-Averaged t-test p-value (respects N_animals):", format.pval(res$p_agg, digits = 4), "\n")
+  })
+}
+
+shinyApp(ui, server)
+```
+
+---
+
+## Step 2: "Code-Along & Fix-It" Lab (85 min)
+
+We load the dendritic spine morphology dataset: `data/lecture5_hierarchical_spines.csv`.
+
+```r
+# If not yet installed on your local machine, run:
+# install.packages(c("lme4", "lmerTest"))
+library(lme4)
+library(lmerTest) # Adds Satterthwaite df and p-values to lmer summaries
+```
+
+```{r}
+spines <- read.csv("../data/lecture5_hierarchical_spines.csv")
+head(spines)
+```
+
+---
+
+### Exercise 1: The Trap of Naive Pooling (Ordinary Least Squares)
+
+Fit a standard linear model using `lm()` that treats each dendritic segment as independent:
+
+```r
+# --- BROKEN CODE CHALLENGE: NAIVE POOLING ---
+fit_naive <- lm(spine_density ~ treatment + dist_soma_um, data = spines)
+summary(fit_naive)
+```
+
+Look at the sample size ($N \approx 280$) and the resulting standard errors:
+* The model assumes each segment was sampled from a completely different biological animal.
+* Because the clustering of segments within cells and animals is ignored, the standard error for `treatment` is artificially narrow, producing an overconfident $t$-statistic.
+
+---
+
+### Exercise 2: Aggregation (The "Mouse Mean" Approach)
+
+Before mixed-effects models became standard, researchers collapsed nested observations to animal averages:
+
+```{r}
+# Aggregate spine density per animal
+mouse_level <- aggregate(spine_density ~ animal_id + treatment, data = spines, mean)
+print(mouse_level)
+
+# Run standard t-test on genuine animal-level replicates (N = 8)
+t_mouse <- t.test(spine_density ~ treatment, data = mouse_level)
+print(t_mouse)
+```
+
+**Discussion:** Aggregation restores proper Type I error control, but throws away cell-to-cell variability and cannot evaluate segment-level covariates like distance from soma (`dist_soma_um`).
+
+---
+
+### Exercise 3: Fitting a Linear Mixed-Effects Model with `lme4`
+
+Mixed models preserve every observation while explicitly estimating variance components at each hierarchical level:
+
+$$\text{spine\_density}_{ijk} = \beta_0 + \beta_1 \cdot \text{treatment} + \beta_2 \cdot \text{dist} + u_{0, \text{animal}(i)} + u_{0, \text{cell}(ij)} + \epsilon_{ijk}$$
+
+Where:
+* $u_{0, \text{animal}} \sim \mathcal{N}(0, \sigma^2_{\text{animal}})$: Random intercept for each mouse.
+* $u_{0, \text{cell}} \sim \mathcal{N}(0, \sigma^2_{\text{cell}})$: Random intercept for each neuron nested within a mouse.
+* $\epsilon_{ijk} \sim \mathcal{N}(0, \sigma^2_{\text{residual}})$: Segment-level residual variance.
+
+```r
+# --- TASK: FIT NESTED LINEAR MIXED MODEL ---
+fit_mixed <- lmer(
+  spine_density ~ treatment + dist_soma_um + (1 | animal_id / cell_id),
+  data = spines
+)
+
+summary(fit_mixed)
+```
+
+Inspect the output:
+1. **Random Effects:** Look at `Std.Dev.` for `animal_id`, `cell_id:animal_id`, and `Residual`. How much variance exists between mice vs. between neurons?
+2. **Fixed Effects:** Notice how the standard error of `treatmentStress` properly reflects the true animal cohort size ($N = 8$), not the total number of segments ($N = 280$).
+
+---
+
+### Exercise 4: Capstone Diagnostic Template
+
+Use this diagnostic checklist to evaluate your mixed model:
+
+```r
+# 1. Check residual normality and homoscedasticity
+par(mfrow = c(1, 2))
+plot(fitted(fit_mixed), residuals(fit_mixed), pch = 19, col = "steelblue",
+     xlab = "Fitted Values", ylab = "Residuals", main = "Residuals vs Fitted")
+abline(h = 0, lty = 2, col = "red")
+
+qqnorm(residuals(fit_mixed), pch = 19, col = "purple")
+qqline(residuals(fit_mixed), col = "red", lwd = 2)
+
+# 2. Extract confidence intervals for fixed parameters
+confint(fit_mixed, parm = "treatmentStress", method = "Wald")
+```
+
+---
+
+## Step 3: "Bring-Your-Own-Data" Hackathon Guidelines (35 min)
+
+For the remainder of the session, select one of the two options:
+
+### Option A: Analyze Your Own Lab Data
+Apply the course workflow to your current PhD project data:
+1. State your experimental design: What is your primary unit of replication ($N$)?
+2. Identify dependencies: Are observations grouped by animal, slice, recording session, or culture dish?
+3. Select the appropriate tool: paired testing, non-parametric rank tests, multiple-testing correction, or linear mixed-effects models.
+
+### Option B: The Synthetic Synaptic Challenge
+Using `spines`:
+* Add an interaction term: Does the effect of distance from soma differ between Control and Stress animals (`treatment * dist_soma_um`)?
+* Compare models using the likelihood ratio test: `anova(fit_mixed, fit_interaction)`.
